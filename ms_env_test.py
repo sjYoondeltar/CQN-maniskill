@@ -1,15 +1,19 @@
 import gymnasium as gym
 import mani_skill2.envs
+import cv2
 
-env = gym.make("PickCube-v0", obs_mode="rgbd", control_mode="pd_joint_delta_pos")
+env = gym.make("PickCube-v0", obs_mode="rgbd", control_mode="pd_joint_delta_pos", render_mode="cameras")
 print("Observation space", env.observation_space)
 print("Action space", env.action_space)
 
-env.seed(0)  # specify a seed for randomness
-obs = env.reset()
+obs, _ = env.reset()
 done = False
 while not done:
     action = env.action_space.sample()
-    obs, reward, done, info = env.step(action)
-    env.render()  # a display is required to render
+    obs, reward, terminated, truncated, info = env.step(action)
+    render = env.render()  # a display is required to render
+    # print("render", render)
+    cv2.imshow("render", render)
+    cv2.waitKey(10)
+    
 env.close()
