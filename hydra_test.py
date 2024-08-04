@@ -29,7 +29,7 @@ def make_ms2_agent(rgb_obs_shape, low_dim_obs_shape, action_shape, use_logger, c
 @hydra.main(config_path="cfgs", config_name="config_maniskill2")
 def main(cfg):
 
-    env = gym.make("PickCube-v0", obs_mode="rgbd", control_mode="pd_joint_delta_pos", render_mode="cameras")
+    env = gym.make(cfg.task_name, obs_mode=cfg.obs_mode, control_mode=cfg.control_mode, render_mode=cfg.render_mode)
     print("Observation space", env.observation_space)
     print("Action space", env.action_space)
     

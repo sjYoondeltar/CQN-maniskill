@@ -1,7 +1,9 @@
 dataset_root: ''
 camera_shape: [84,84]
+obs_mode: "rgbd"
+control_mode: "pd_joint_delta_pos"
 camera_keys: [base_camera,hand_camera]
 state_keys: [qpos]
-renderer: None
+render_mode: "cameras"
 num_demos: 100
 num_train_frames: 30250
