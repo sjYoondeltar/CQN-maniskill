@@ -33,7 +33,7 @@ def main(cfg):
     print("Observation space", env.observation_space)
     print("Action space", env.action_space)
     
-    rgb_obs_shape = (2, *env.observation_space['image']['base_camera']['rgb'].shape)
+    rgb_obs_shape = (2, 3, 128, 128)
 
     agent = make_ms2_agent(
                 rgb_obs_shape,
