@@ -1,0 +1,7 @@
+dataset_root: ''
+camera_shape: [84,84]
+camera_keys: [base_camera,hand_camera]
+state_keys: [qpos]
+renderer: None
+num_demos: 100
+num_train_frames: 30250
