@@ -144,3 +144,5 @@ ckpts/
 
 *.png
 *.npy
+
+exp_local/*
