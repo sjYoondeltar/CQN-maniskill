@@ -27,20 +27,21 @@ def make_ms2_agent(rgb_obs_shape, low_dim_obs_shape, action_shape, use_logger, c
     cfg.use_logger = use_logger
     return hydra.utils.instantiate(cfg)
 
-def convert_obs(obs):
+def convert_obs(obs, cfg):
     # rgb -> (B, V, C, H, W) torch float tensor, V is both base_camera and hand_camera
     # resize to 84x84
-    rgb_base_obs = torch.tensor(cv2.resize(obs['image']['base_camera']['rgb'], (84, 84)).transpose(2, 0, 1), dtype=torch.float32)[None]
-    rgb_hand_obs = torch.tensor(cv2.resize(obs['image']['hand_camera']['rgb'], (84, 84)).transpose(2, 0, 1), dtype=torch.float32)[None]
-    rgb_obs = torch.cat([rgb_base_obs, rgb_hand_obs], dim=0)
+    rgb_obs_list = []
+    for camera in ['base_camera', 'hand_camera']:
+        rgb_obs_list.append(torch.tensor(cv2.resize(obs['image'][camera]['rgb'], (84, 84)).transpose(2, 0, 1), dtype=torch.float32)[None])
+    rgb_obs = torch.cat(rgb_obs_list, dim=0)
     
-    low_dim_obs = torch.tensor(obs['agent']['qpos'], dtype=torch.float32)
+    low_dim_obs = torch.tensor(obs['agent'][cfg.state_keys[0]], dtype=torch.float32)
     return rgb_obs, low_dim_obs
 
 @hydra.main(config_path="cfgs", config_name="config_maniskill2")
 def main(cfg):
 
-    env = gym.make("PickCube-v0", obs_mode="rgbd", control_mode="pd_joint_delta_pos", render_mode="cameras")
+    env = gym.make(cfg.task_name, obs_mode=cfg.obs_mode, control_mode=cfg.control_mode, render_mode=cfg.render_mode)
     print("Observation space", env.observation_space)
     print("Action space", env.action_space)
     
@@ -65,11 +66,11 @@ def main(cfg):
         # else:
         #     action = np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
         
-        rgb_obs, low_dim_obs = convert_obs(obs)
+        rgb_obs, low_dim_obs = convert_obs(obs, cfg)
         action = agent.act(rgb_obs, low_dim_obs, global_step, True)
         
         obs, reward, terminated, truncated, info = env.step(action)
-        render = env.render()  # a display is required to render
+        # render = env.render()  # a display is required to render
         print("reward", reward)
         # print("render", render)
         # cv2.imshow("render", render)
