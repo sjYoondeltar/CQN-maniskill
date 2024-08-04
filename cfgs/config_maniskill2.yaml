@@ -42,14 +42,14 @@ agent:
   rgb_obs_shape: ??? # to be specified later
   low_dim_obs_shape: ??? # to be specified later
   action_shape: ??? # to be specified later
-  device: ${device}
-  lr: ${lr}
+  device: 0
+  lr: 0.0001
   weight_decay: ${weight_decay}
   critic_target_tau: 0.02
   update_every_steps: 1
   use_logger: ??? # to be specified later
   num_expl_steps: 0
-  feature_dim: ${feature_dim}
+  feature_dim: 128
   hidden_dim: 512
   levels: 3
   bins: 5
@@ -63,7 +63,7 @@ agent:
 
 hydra:
   run:
-    dir: ./exp_local/cqn_pixel_rlbench/${now:%Y%m%d%H%M%S}
+    dir: ./exp_local/cqn_maniskill2/${now:%Y%m%d%H%M%S}
   sweep:
     dir: ./exp/${now:%Y.%m.%d}/${now:%H%M}_${agent_cfg.experiment}
     subdir: ${hydra.job.num}
