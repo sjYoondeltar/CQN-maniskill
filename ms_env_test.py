@@ -60,13 +60,13 @@ def main(cfg):
     for i in range(200):
         # action = env.action_space.sample()
         
-        if i < 100:
-            action = np.array([-1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0])
-        else:
-            action = np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
+        # if i < 100:
+        #     action = np.array([-1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0])
+        # else:
+        #     action = np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
         
         rgb_obs, low_dim_obs = convert_obs(obs)
-        agent_output = agent.act(rgb_obs, low_dim_obs, global_step, True)
+        action = agent.act(rgb_obs, low_dim_obs, global_step, True)
         
         obs, reward, terminated, truncated, info = env.step(action)
         render = env.render()  # a display is required to render
