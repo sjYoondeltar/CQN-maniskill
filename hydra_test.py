@@ -19,10 +19,10 @@ from video import TrainVideoRecorder, VideoRecorder
 
 torch.backends.cudnn.benchmark = True
 
-def make_agent(rgb_obs_spec, low_dim_obs_spec, action_spec, use_logger, cfg):
-    cfg.rgb_obs_shape = rgb_obs_spec.shape
-    cfg.low_dim_obs_shape = low_dim_obs_spec.shape
-    cfg.action_shape = action_spec.shape
+def make_ms2_agent(rgb_obs_shape, low_dim_obs_shape, action_shape, use_logger, cfg):
+    cfg.rgb_obs_shape = rgb_obs_shape
+    cfg.low_dim_obs_shape = low_dim_obs_shape
+    cfg.action_shape = action_shape
     cfg.use_logger = use_logger
     return hydra.utils.instantiate(cfg)
 
@@ -32,11 +32,13 @@ def main(cfg):
     env = gym.make("PickCube-v0", obs_mode="rgbd", control_mode="pd_joint_delta_pos", render_mode="cameras")
     print("Observation space", env.observation_space)
     print("Action space", env.action_space)
+    
+    rgb_obs_shape = (2, *env.observation_space['image']['base_camera']['rgb'].shape)
 
-    agent = make_agent(
-                self.train_env.rgb_observation_spec(),
-                self.train_env.low_dim_observation_spec(),
-                self.train_env.action_spec(),
+    agent = make_ms2_agent(
+                rgb_obs_shape,
+                [9],
+                [8],
                 False,
                 cfg.agent,
             )
