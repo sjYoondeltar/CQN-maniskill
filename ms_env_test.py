@@ -56,7 +56,7 @@ def main(cfg):
             )
 
     obs, _ = env.reset()
-    done = False
+    terminated = False
     global_step = 0
     for i in range(200):
         # action = env.action_space.sample()
