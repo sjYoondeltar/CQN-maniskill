@@ -1,0 +1,6 @@
+defaults:
+  - default
+  - _self_
+
+task_name: PickCube-v0
+episode_length: 50
