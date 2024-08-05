@@ -26,10 +26,10 @@ from video import TrainVideoRecorder, VideoRecorder
 torch.backends.cudnn.benchmark = True
 
 
-def make_agent(rgb_obs_spec, low_dim_obs_spec, action_spec, use_logger, cfg):
-    cfg.rgb_obs_shape = rgb_obs_spec.shape
-    cfg.low_dim_obs_shape = low_dim_obs_spec.shape
-    cfg.action_shape = action_spec.shape
+def make_ms2_agent(rgb_obs_shape, low_dim_obs_shape, action_shape, use_logger, cfg):
+    cfg.rgb_obs_shape = rgb_obs_shape
+    cfg.low_dim_obs_shape = low_dim_obs_shape
+    cfg.action_shape = action_shape
     cfg.use_logger = use_logger
     return hydra.utils.instantiate(cfg)
 
@@ -56,11 +56,11 @@ class Workspace:
         self.device = torch.device(cfg.device)
         self.setup()
 
-        self.agent = make_agent(
-            self.train_env.rgb_observation_spec(),
-            self.train_env.low_dim_observation_spec(),
-            self.train_env.action_spec(),
-            self.cfg.use_tb or self.cfg.use_wandb,
+        self.agent = make_ms2_agent(
+            (2, 3, 84, 84),
+            [9],
+            [8],
+            False,
             self.cfg.agent,
         )
         self.timer = utils.Timer()
@@ -270,7 +270,7 @@ class Workspace:
             episode_step += 1
             self._global_step += 1
 
-    def load_rlbench_demos(self):
+    def load_ms2_demos(self):
         if self.cfg.num_demos > 0:
             demos = self.train_env.get_demos(self.cfg.num_demos)
             for demo in demos:
@@ -295,7 +295,7 @@ class Workspace:
             self.__dict__[k] = v
 
 
-@hydra.main(config_path="cfgs", config_name="config_rlbench")
+@hydra.main(config_path="cfgs", config_name="config_maniskill2")
 def main(cfg):
     from train_ms2 import Workspace as W
 
@@ -305,8 +305,8 @@ def main(cfg):
     if snapshot.exists():
         print(f"resuming: {snapshot}")
         workspace.load_snapshot()
-    workspace.load_rlbench_demos()
-    workspace.train()
+    workspace.load_ms2_demos()
+    # workspace.train()
 
 
 if __name__ == "__main__":
