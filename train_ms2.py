@@ -20,7 +20,7 @@ import gymnasium as gym
 import mani_skill2.envs
 import utils
 from logger import Logger
-from replay_buffer import ReplayBufferStorage, make_replay_loader
+from replay_buffer_ms2 import ReplayBufferStorage, make_replay_loader
 from video import TrainVideoRecorder, VideoRecorder
 
 torch.backends.cudnn.benchmark = True
