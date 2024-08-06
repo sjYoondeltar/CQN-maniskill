@@ -275,17 +275,3 @@ def make_replay_loader(
         worker_init_fn=_worker_init_fn,
     )
     return loader
-
-if __name__ == "__main__":
-    
-    
-    from dm_env import specs
-    # create replay buffer
-    data_specs = (
-        specs.Array((128, 128, 3), np.uint8, "rgb_obs"),
-        specs.Array((9,), np.float32, "qpos"),
-        specs.Array((8,), np.float32, "action"),
-        specs.Array((1,), np.float32, "reward"),
-        specs.Array((1,), np.float32, "discount"),
-        specs.Array((1,), np.float32, "demo"),
-    )
