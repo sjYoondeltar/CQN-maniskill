@@ -42,16 +42,17 @@ class ReplayBufferStorage:
     def __len__(self):
         return self._num_transitions
 
-    def add(self, time_step):
+    def add(self, instant_samples):
         for spec in self._data_specs:
-            value = time_step[spec.name]
             # Remove frame stacking
             if spec.name == "qpos":
-                low_dim = 8  # hard-coded
-                value = value[..., -low_dim:]
+                low_dim = 9  # hard-coded
+                value = instant_samples['qpos']
             elif spec.name == "rgb_obs":
                 rgb_dim = 3  # hard-coded
-                value = value[:, -rgb_dim:]
+                value = instant_samples['rgb_obs']
+            else:
+                value = instant_samples[spec.name]
             if np.isscalar(value):
                 value = np.full(spec.shape, value, spec.dtype)
             assert spec.shape == value.shape and spec.dtype == value.dtype, (
@@ -62,7 +63,7 @@ class ReplayBufferStorage:
                 value.dtype,
             )
             self._current_episode[spec.name].append(value)
-        if time_step.last():
+        if instant_samples['last']:
             episode = dict()
             for spec in self._data_specs:
                 value = self._current_episode[spec.name]
