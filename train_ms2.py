@@ -12,6 +12,7 @@ from pathlib import Path
 
 import hydra
 import numpy as np
+import cv2
 import torch
 from dm_env import specs
 
@@ -19,18 +20,30 @@ import gymnasium as gym
 import mani_skill2.envs
 import utils
 from logger import Logger
-from replay_buffer import ReplayBufferStorage, make_replay_loader
+from replay_buffer_ms2 import ReplayBufferStorage, make_replay_loader
 from video import TrainVideoRecorder, VideoRecorder
 
 torch.backends.cudnn.benchmark = True
 
 
-def make_agent(rgb_obs_spec, low_dim_obs_spec, action_spec, use_logger, cfg):
-    cfg.rgb_obs_shape = rgb_obs_spec.shape
-    cfg.low_dim_obs_shape = low_dim_obs_spec.shape
-    cfg.action_shape = action_spec.shape
+def make_ms2_agent(rgb_obs_shape, low_dim_obs_shape, action_shape, use_logger, cfg):
+    cfg.rgb_obs_shape = rgb_obs_shape
+    cfg.low_dim_obs_shape = low_dim_obs_shape
+    cfg.action_shape = action_shape
     cfg.use_logger = use_logger
     return hydra.utils.instantiate(cfg)
+
+
+def convert_obs(obs, cfg):
+    # rgb -> (B, V, C, H, W) torch float tensor, V is both base_camera and hand_camera
+    # resize to 84x84
+    rgb_obs_list = []
+    for camera in ['base_camera', 'hand_camera']:
+        rgb_obs_list.append(torch.tensor(cv2.resize(obs['image'][camera]['rgb'], (84, 84)).transpose(2, 0, 1), dtype=torch.float32)[None])
+    rgb_obs = torch.cat(rgb_obs_list, dim=0)
+    
+    low_dim_obs = torch.tensor(obs['agent'][cfg.state_keys[0]], dtype=torch.float32)
+    return rgb_obs, low_dim_obs
 
 
 class Workspace:
@@ -43,11 +56,11 @@ class Workspace:
         self.device = torch.device(cfg.device)
         self.setup()
 
-        self.agent = make_agent(
-            self.train_env.rgb_observation_spec(),
-            self.train_env.low_dim_observation_spec(),
-            self.train_env.action_spec(),
-            self.cfg.use_tb or self.cfg.use_wandb,
+        self.agent = make_ms2_agent(
+            (2, 3, 84, 84),
+            [9],
+            [8],
+            False,
             self.cfg.agent,
         )
         self.timer = utils.Timer()
@@ -59,23 +72,17 @@ class Workspace:
 
     def setup(self):
         # create envs
-        self.train_env = rlbench_env.make(
+        self.train_env = gym.make(
             self.cfg.task_name,
-            self.cfg.episode_length,
-            self.cfg.frame_stack,
-            self.cfg.dataset_root,
-            self.cfg.arm_max_velocity,
-            self.cfg.arm_max_acceleration,
-            self.cfg.camera_shape,
-            self.cfg.camera_keys,
-            self.cfg.state_keys,
-            self.cfg.renderer,
+            obs_mode=self.cfg.obs_mode,
+            control_mode=self.cfg.control_mode,
+            render_mode=self.cfg.render_mode
         )
         # create replay buffer
         data_specs = (
-            self.train_env.rgb_raw_observation_spec(),
-            self.train_env.low_dim_raw_observation_spec(),
-            self.train_env.action_spec(),
+            specs.Array((128, 128, 3), np.uint8, "rgb_obs"),
+            specs.Array((9,), np.float32, "qpos"),
+            specs.Array((8,), np.float32, "action"),
             specs.Array((1,), np.float32, "reward"),
             specs.Array((1,), np.float32, "discount"),
             specs.Array((1,), np.float32, "demo"),
@@ -148,19 +155,22 @@ class Workspace:
         eval_until_episode = utils.Until(self.cfg.num_eval_episodes)
 
         while eval_until_episode(episode):
-            time_step = self.train_env.reset()
+            obs, _ = self.train_env.reset()
+            terminated = False
+            truncated = False
             self.video_recorder.init(self.train_env, enabled=(episode == 0))
-            while not time_step.last():
+            while terminated or truncated:
                 with torch.no_grad(), utils.eval_mode(self.agent):
+                    rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
                     action = self.agent.act(
-                        time_step.rgb_obs,
-                        time_step.low_dim_obs,
+                        rgb_obs,
+                        low_dim_obs,
                         self.global_step,
                         eval_mode=True,
                     )
-                time_step = self.train_env.step(action)
+                obs, reward, terminated, truncated, info  = self.train_env.step(action)
                 self.video_recorder.record(self.train_env)
-                total_reward += time_step.reward
+                total_reward += reward
                 step += 1
 
             episode += 1
@@ -185,7 +195,7 @@ class Workspace:
         do_eval = False
 
         episode_step, episode_reward = 0, 0
-        time_step = self.train_env.reset()
+        obs, _ = self.train_env.reset()
         self.replay_storage.add(time_step)
         self.demo_replay_storage.add(time_step)
         self.train_video_recorder.init(time_step.rgb_obs[0])
@@ -260,7 +270,7 @@ class Workspace:
             episode_step += 1
             self._global_step += 1
 
-    def load_rlbench_demos(self):
+    def load_ms2_demos(self):
         if self.cfg.num_demos > 0:
             demos = self.train_env.get_demos(self.cfg.num_demos)
             for demo in demos:
@@ -285,9 +295,9 @@ class Workspace:
             self.__dict__[k] = v
 
 
-@hydra.main(config_path="cfgs", config_name="config_rlbench")
+@hydra.main(config_path="cfgs", config_name="config_maniskill2")
 def main(cfg):
-    from train_rlbench import Workspace as W
+    from train_ms2 import Workspace as W
 
     root_dir = Path.cwd()
     workspace = W(cfg)
@@ -295,8 +305,8 @@ def main(cfg):
     if snapshot.exists():
         print(f"resuming: {snapshot}")
         workspace.load_snapshot()
-    workspace.load_rlbench_demos()
-    workspace.train()
+    workspace.load_ms2_demos()
+    # workspace.train()
 
 
 if __name__ == "__main__":
