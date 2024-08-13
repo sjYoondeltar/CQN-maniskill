@@ -5,5 +5,5 @@ control_mode: "pd_joint_delta_pos"
 camera_keys: [base_camera,hand_camera]
 state_keys: [qpos]
 render_mode: "cameras"
-num_demos: 100
+num_demos: 0
 num_train_frames: 30250
