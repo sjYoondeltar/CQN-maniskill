@@ -22,28 +22,9 @@ import utils
 from logger import Logger
 from replay_buffer_ms2 import ReplayBufferStorage, make_replay_loader
 from video import TrainVideoRecorder, VideoRecorder
+from ms2_utils import make_ms2_agent, convert_obs, load_h5_data
 
 torch.backends.cudnn.benchmark = True
-
-
-def make_ms2_agent(rgb_obs_shape, low_dim_obs_shape, action_shape, use_logger, cfg):
-    cfg.rgb_obs_shape = rgb_obs_shape
-    cfg.low_dim_obs_shape = low_dim_obs_shape
-    cfg.action_shape = action_shape
-    cfg.use_logger = use_logger
-    return hydra.utils.instantiate(cfg)
-
-
-def convert_obs(obs, cfg):
-    # rgb -> (B, V, C, H, W) torch float tensor, V is both base_camera and hand_camera
-    # resize to 84x84
-    rgb_obs_list = []
-    for camera in ['base_camera', 'hand_camera']:
-        rgb_obs_list.append(torch.tensor(cv2.resize(obs['image'][camera]['rgb'], (84, 84)).transpose(2, 0, 1), dtype=torch.float32)[None])
-    rgb_obs = torch.cat(rgb_obs_list, dim=0)
-    
-    low_dim_obs = torch.tensor(obs['agent'][cfg.state_keys[0]], dtype=torch.float32)
-    return rgb_obs, low_dim_obs
 
 
 class Workspace:
@@ -80,9 +61,9 @@ class Workspace:
         )
         # create replay buffer
         data_specs = (
-            specs.Array((128, 128, 3), np.uint8, "rgb_obs"),
+            specs.Array((2, 3, 84, 84), np.uint8, "rgb_obs"),
             specs.Array((9,), np.float32, "qpos"),
-            specs.Array((8,), np.float32, "action"),
+            specs.Array((7,), np.float32, "action"),
             specs.Array((1,), np.float32, "reward"),
             specs.Array((1,), np.float32, "discount"),
             specs.Array((1,), np.float32, "demo"),
@@ -272,11 +253,67 @@ class Workspace:
 
     def load_ms2_demos(self):
         if self.cfg.num_demos > 0:
-            demos = self.train_env.get_demos(self.cfg.num_demos)
-            for demo in demos:
-                for time_step in demo:
-                    self.replay_storage.add(time_step)
-                    self.demo_replay_storage.add(time_step)
+            
+            import h5py
+            from mani_skill2.utils.io_utils import load_json
+            from tqdm import tqdm
+            base_path = hydra.utils.get_original_cwd()
+            dataset_file = os.path.join(base_path, self.cfg.dataset_file)
+            self.data = h5py.File(dataset_file, "r")
+            json_path = dataset_file.replace(".h5", ".json")
+            self.json_data = load_json(json_path)
+            self.episodes = self.json_data["episodes"]
+            self.env_info = self.json_data["env_info"]
+            self.env_id = self.env_info["env_id"]
+            self.env_kwargs = self.env_info["env_kwargs"]
+
+            self.obs_state = []
+            self.obs_rgbd = []
+            self.actions = []
+            self.total_frames = 0
+            load_count = self.cfg.num_demos
+            for eps_id in tqdm(range(load_count)):
+                eps = self.episodes[eps_id]
+                trajectory = self.data[f"traj_{eps['episode_id']}"]
+                trajectory = load_h5_data(trajectory)
+                observations = trajectory["obs"]
+                actions = trajectory["actions"]
+                
+                length = len(observations)
+                
+                for i_traj in range(len(actions)):
+                    
+                    # image data is not scaled here and is kept as uint16 to save space
+                    rgb_b = cv2.resize(observations["image"]['base_camera']['rgb'][i_traj], (84, 84)).astype(np.uint8)
+                    rgb_h = cv2.resize(observations["image"]['base_camera']['rgb'][i_traj], (84, 84)).astype(np.uint8)
+                    
+                    # transpose to (C, H, W)
+                    rgb_b = rgb_b.transpose(2, 0, 1)[np.newaxis]
+                    rgb_h = rgb_h.transpose(2, 0, 1)[np.newaxis]
+                                    
+                    rgb = np.concatenate([rgb_b, rgb_h], axis=0)
+                    
+                    if i_traj == length - 1:
+                        terminated = True
+                        truncated = False
+                        reward = 1.0
+                    else:
+                        terminated = False
+                        truncated = False
+                        reward = 0.0
+                    
+                    inst_samples = {
+                        'rgb_obs': rgb,
+                        'qpos': observations["agent"]["qpos"][i_traj],
+                        'action': actions[i_traj],
+                        'reward': reward,
+                        'discount': 0.99,
+                        'demo': 1.0,
+                        'last': terminated or truncated,
+                    }
+                    
+                    self.replay_storage.add(inst_samples)
+                    self.demo_replay_storage.add(inst_samples)
         else:
             logging.warning("Not using demonstrations")
 

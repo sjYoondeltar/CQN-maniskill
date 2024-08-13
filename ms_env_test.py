@@ -17,26 +17,9 @@ import utils
 from logger import Logger
 from replay_buffer_ms2 import ReplayBufferStorage, make_replay_loader
 from video import TrainVideoRecorder, VideoRecorder
+from ms2_utils import make_ms2_agent, convert_obs
 
 torch.backends.cudnn.benchmark = True
-
-def make_ms2_agent(rgb_obs_shape, low_dim_obs_shape, action_shape, use_logger, cfg):
-    cfg.rgb_obs_shape = rgb_obs_shape
-    cfg.low_dim_obs_shape = low_dim_obs_shape
-    cfg.action_shape = action_shape
-    cfg.use_logger = use_logger
-    return hydra.utils.instantiate(cfg)
-
-def convert_obs(obs, cfg):
-    # rgb -> (B, V, C, H, W) torch float tensor, V is both base_camera and hand_camera
-    # resize to 84x84
-    rgb_obs_list = []
-    for camera in ['base_camera', 'hand_camera']:
-        rgb_obs_list.append(torch.tensor(cv2.resize(obs['image'][camera]['rgb'], (84, 84)).transpose(2, 0, 1), dtype=torch.float32)[None])
-    rgb_obs = torch.cat(rgb_obs_list, dim=0)
-    
-    low_dim_obs = torch.tensor(obs['agent'][cfg.state_keys[0]], dtype=torch.float32)
-    return rgb_obs, low_dim_obs
 
 @hydra.main(config_path="cfgs", config_name="config_maniskill2")
 def main(cfg):
@@ -53,7 +36,7 @@ def main(cfg):
     data_specs = (
         specs.Array((2, 3, 84, 84), np.uint8, "rgb_obs"),
         specs.Array((9,), np.float32, "qpos"),
-        specs.Array((8,), np.float32, "action"),
+        specs.Array((7,), np.float32, "action"),
         specs.Array((1,), np.float32, "reward"),
         specs.Array((1,), np.float32, "discount"),
         specs.Array((1,), np.float32, "demo"),
@@ -78,7 +61,7 @@ def main(cfg):
     agent = make_ms2_agent(
                 rgb_obs_shape,
                 [9],
-                [8],
+                [7],
                 False,
                 cfg.agent,
             )
