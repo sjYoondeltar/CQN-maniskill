@@ -40,7 +40,7 @@ class Workspace:
         self.agent = make_ms2_agent(
             (2, 3, 84, 84),
             [9],
-            [8],
+            [7],
             False,
             self.cfg.agent,
         )
@@ -185,6 +185,7 @@ class Workspace:
         inst_samples = {
             'rgb_obs': rgb_obs.numpy().astype(np.uint8),
             'qpos': low_dim_obs.numpy(),
+            'action': np.zeros(7).astype(np.float32),
             'reward': 0.0,
             'discount': 0.99,
             'demo': 0.0,
@@ -193,10 +194,10 @@ class Workspace:
         
         self.replay_storage.add(inst_samples)
         self.demo_replay_storage.add(inst_samples)
-        self.train_video_recorder.init(inst_samples.rgb_obs[0])
+        self.train_video_recorder.init(inst_samples["rgb_obs"][0].transpose(1, 2, 0))
         metrics = None
         while train_until_step(self.global_step):
-            if inst_samples.last():
+            if inst_samples["last"]:
                 self._global_episode += 1
                 self.train_video_recorder.save(f"{self.global_frame}.mp4")
                 # wait until all the metrics schema is populated
@@ -233,6 +234,7 @@ class Workspace:
                 inst_samples = {
                     'rgb_obs': rgb_obs.numpy().astype(np.uint8),
                     'qpos': low_dim_obs.numpy(),
+                    'action': np.zeros(7).astype(np.float32),
                     'reward': 0.0,
                     'discount': 0.99,
                     'demo': 0.0,
@@ -240,7 +242,7 @@ class Workspace:
                 }
                 self.replay_storage.add(inst_samples)
                 self.demo_replay_storage.add(inst_samples)
-                self.train_video_recorder.init(inst_samples.rgb_obs[0])
+                self.train_video_recorder.init(inst_samples["rgb_obs"][0].transpose(1, 2, 0))
                 # try to save snapshot
                 if self.cfg.save_snapshot:
                     self.save_snapshot()
@@ -256,8 +258,8 @@ class Workspace:
             # sample action
             with torch.no_grad(), utils.eval_mode(self.agent):
                 action = self.agent.act(
-                    inst_samples.rgb_obs,
-                    inst_samples.low_dim_obs,
+                    rgb_obs,
+                    low_dim_obs,
                     self.global_step,
                     eval_mode=False,
                 )
@@ -282,7 +284,7 @@ class Workspace:
             }
             self.replay_storage.add(inst_samples)
             self.demo_replay_storage.add(inst_samples)
-            self.train_video_recorder.record(inst_samples.rgb_obs[0])
+            self.train_video_recorder.record(inst_samples["rgb_obs"][0].transpose(1, 2, 0))
             episode_step += 1
             self._global_step += 1
 
@@ -378,7 +380,7 @@ def main(cfg):
         print(f"resuming: {snapshot}")
         workspace.load_snapshot()
     workspace.load_ms2_demos()
-    # workspace.train()
+    workspace.train()
 
 
 if __name__ == "__main__":
