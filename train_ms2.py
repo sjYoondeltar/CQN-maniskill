@@ -176,13 +176,27 @@ class Workspace:
         do_eval = False
 
         episode_step, episode_reward = 0, 0
+        
         obs, _ = self.train_env.reset()
-        self.replay_storage.add(time_step)
-        self.demo_replay_storage.add(time_step)
-        self.train_video_recorder.init(time_step.rgb_obs[0])
+        terminated = False
+        truncated = False
+        rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
+        
+        inst_samples = {
+            'rgb_obs': rgb_obs.numpy().astype(np.uint8),
+            'qpos': low_dim_obs.numpy(),
+            'reward': 0.0,
+            'discount': 0.99,
+            'demo': 0.0,
+            'last': terminated or truncated,
+        }
+        
+        self.replay_storage.add(inst_samples)
+        self.demo_replay_storage.add(inst_samples)
+        self.train_video_recorder.init(inst_samples.rgb_obs[0])
         metrics = None
         while train_until_step(self.global_step):
-            if time_step.last():
+            if inst_samples.last():
                 self._global_episode += 1
                 self.train_video_recorder.save(f"{self.global_frame}.mp4")
                 # wait until all the metrics schema is populated
@@ -211,10 +225,22 @@ class Workspace:
                     do_eval = False
 
                 # reset env
-                time_step = self.train_env.reset()
-                self.replay_storage.add(time_step)
-                self.demo_replay_storage.add(time_step)
-                self.train_video_recorder.init(time_step.rgb_obs[0])
+                obs, _ = self.train_env.reset()
+                terminated = False
+                truncated = False
+                rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
+                
+                inst_samples = {
+                    'rgb_obs': rgb_obs.numpy().astype(np.uint8),
+                    'qpos': low_dim_obs.numpy(),
+                    'reward': 0.0,
+                    'discount': 0.99,
+                    'demo': 0.0,
+                    'last': terminated or truncated,
+                }
+                self.replay_storage.add(inst_samples)
+                self.demo_replay_storage.add(inst_samples)
+                self.train_video_recorder.init(inst_samples.rgb_obs[0])
                 # try to save snapshot
                 if self.cfg.save_snapshot:
                     self.save_snapshot()
@@ -230,8 +256,8 @@ class Workspace:
             # sample action
             with torch.no_grad(), utils.eval_mode(self.agent):
                 action = self.agent.act(
-                    time_step.rgb_obs,
-                    time_step.low_dim_obs,
+                    inst_samples.rgb_obs,
+                    inst_samples.low_dim_obs,
                     self.global_step,
                     eval_mode=False,
                 )
@@ -243,11 +269,20 @@ class Workspace:
                 self.logger.log_metrics(metrics, self.global_frame, ty="train")
 
             # take env step
-            time_step = self.train_env.step(action)
-            episode_reward += time_step.reward
-            self.replay_storage.add(time_step)
-            self.demo_replay_storage.add(time_step)
-            self.train_video_recorder.record(time_step.rgb_obs[0])
+            obs, reward, terminated, truncated, info = self.train_env.step(action)
+            rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
+            inst_samples = {
+                'rgb_obs': rgb_obs.numpy().astype(np.uint8),
+                'qpos': low_dim_obs.numpy(),
+                'action': action,
+                'reward': reward,
+                'discount': 0.99,
+                'demo': 0.0,
+                'last': terminated or truncated,
+            }
+            self.replay_storage.add(inst_samples)
+            self.demo_replay_storage.add(inst_samples)
+            self.train_video_recorder.record(inst_samples.rgb_obs[0])
             episode_step += 1
             self._global_step += 1
 
