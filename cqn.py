@@ -89,7 +89,7 @@ class MultiViewCNNEncoder(nn.Module):
         hs = []
         for v in range(self.num_views):
             h = self.conv_nets[v](obs[:, v])
-            h = h.view(h.shape[0], -1)
+            h = h.reshape(h.shape[0], -1)
             hs.append(h)
         h = torch.cat(hs, -1)
         return h
