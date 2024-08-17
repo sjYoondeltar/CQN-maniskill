@@ -61,13 +61,16 @@ class Workspace:
         )
         # create replay buffer
         data_specs = (
-            specs.Array((2, 3, 84, 84), np.uint8, "rgb_obs"),
-            specs.Array((9,), np.float32, "qpos"),
+            specs.Array((2, 3*self.cfg.frame_stack, 84, 84), np.uint8, "rgb_obs"),
+            specs.Array((9*self.cfg.frame_stack,), np.float32, "qpos"),
             specs.Array((7,), np.float32, "action"),
             specs.Array((1,), np.float32, "reward"),
             specs.Array((1,), np.float32, "discount"),
             specs.Array((1,), np.float32, "demo"),
         )
+        
+        self.stack_rgb_obs = np.zeros((2, 3*self.cfg.frame_stack, 84, 84), dtype=np.uint8)
+        self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
 
         self.replay_storage = ReplayBufferStorage(
             data_specs, self.work_dir / "buffer", self.cfg.use_relabeling
@@ -162,6 +165,13 @@ class Workspace:
             log("episode_length", step * self.cfg.action_repeat / episode)
             log("episode", self.global_episode)
             log("step", self.global_step)
+            
+    def uodate_frame_stack(self, rgb_obs, low_dim_obs):
+        self.stack_rgb_obs = np.roll(self.stack_rgb_obs, shift=-3, axis=1)
+        self.stack_rgb_obs[:, -3:] = rgb_obs
+        self.stack_qpos = np.roll(self.stack_qpos, shift=-9, axis=0)
+        self.stack_qpos[-9:] = low_dim_obs
+        return self.stack_rgb_obs, self.stack_qpos
 
     def train(self):
         # predicates
@@ -181,10 +191,11 @@ class Workspace:
         terminated = False
         truncated = False
         rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
+        stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
         
         inst_samples = {
-            'rgb_obs': rgb_obs.numpy().astype(np.uint8),
-            'qpos': low_dim_obs.numpy(),
+            'rgb_obs': stack_rgb_obs,
+            'qpos': stack_low_dim_obs,
             'action': np.zeros(7).astype(np.float32),
             'reward': 0.0,
             'discount': 0.99,
@@ -226,14 +237,18 @@ class Workspace:
                     do_eval = False
 
                 # reset env
+                self.stack_rgb_obs = np.zeros((2, 3*self.cfg.frame_stack, 84, 84), dtype=np.uint8)
+                self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
+                
                 obs, _ = self.train_env.reset()
                 terminated = False
                 truncated = False
                 rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
+                stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
                 
                 inst_samples = {
-                    'rgb_obs': rgb_obs.numpy().astype(np.uint8),
-                    'qpos': low_dim_obs.numpy(),
+                    'rgb_obs': stack_rgb_obs,
+                    'qpos': stack_low_dim_obs,
                     'action': np.zeros(7).astype(np.float32),
                     'reward': 0.0,
                     'discount': 0.99,
@@ -258,8 +273,8 @@ class Workspace:
             # sample action
             with torch.no_grad(), utils.eval_mode(self.agent):
                 action = self.agent.act(
-                    rgb_obs,
-                    low_dim_obs,
+                    torch.tensor(stack_rgb_obs).float(),
+                    torch.tensor(stack_low_dim_obs),
                     self.global_step,
                     eval_mode=False,
                 )
@@ -273,9 +288,10 @@ class Workspace:
             # take env step
             obs, reward, terminated, truncated, info = self.train_env.step(action)
             rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
+            stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
             inst_samples = {
-                'rgb_obs': rgb_obs.numpy().astype(np.uint8),
-                'qpos': low_dim_obs.numpy(),
+                'rgb_obs': stack_rgb_obs,
+                'qpos': stack_low_dim_obs,
                 'action': action,
                 'reward': reward,
                 'discount': 0.99,
