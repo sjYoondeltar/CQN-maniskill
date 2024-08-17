@@ -187,6 +187,9 @@ class Workspace:
 
         episode_step, episode_reward = 0, 0
         
+        self.stack_rgb_obs = np.zeros((2, 3*self.cfg.frame_stack, 84, 84), dtype=np.uint8)
+        self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
+        
         obs, _ = self.train_env.reset()
         terminated = False
         truncated = False
@@ -334,6 +337,9 @@ class Workspace:
                 
                 length = len(observations)
                 
+                self.stack_rgb_obs = np.zeros((2, 3*self.cfg.frame_stack, 84, 84), dtype=np.uint8)
+                self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
+                
                 for i_traj in range(len(trajectory)):
                     
                     # image data is not scaled here and is kept as uint16 to save space
@@ -362,9 +368,11 @@ class Workspace:
                         reward = 0.0
                         action = actions[i_traj-1]
                     
+                    stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb, observations["agent"]["qpos"][i_traj])
+                    
                     inst_samples = {
-                        'rgb_obs': rgb,
-                        'qpos': observations["agent"]["qpos"][i_traj],
+                        'rgb_obs': stack_rgb_obs,
+                        'qpos': stack_low_dim_obs,
                         'action': action,
                         'reward': reward,
                         'discount': 0.99,
