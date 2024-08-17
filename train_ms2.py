@@ -38,8 +38,8 @@ class Workspace:
         self.setup()
 
         self.agent = make_ms2_agent(
-            (2, 3, 84, 84),
-            [9],
+            (2, 3*self.cfg.frame_stack, 84, 84),
+            [9*self.cfg.frame_stack],
             [7],
             False,
             self.cfg.agent,
