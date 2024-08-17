@@ -61,8 +61,8 @@ class Workspace:
         )
         # create replay buffer
         data_specs = (
-            specs.Array((2, 3*self.cfg.frame_stack, 84, 84), np.uint8, "rgb_obs"),
-            specs.Array((9*self.cfg.frame_stack,), np.float32, "qpos"),
+            specs.Array((2, 3, 84, 84), np.uint8, "rgb_obs"),
+            specs.Array((9,), np.float32, "qpos"),
             specs.Array((7,), np.float32, "action"),
             specs.Array((1,), np.float32, "reward"),
             specs.Array((1,), np.float32, "discount"),
@@ -197,8 +197,8 @@ class Workspace:
         stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
         
         inst_samples = {
-            'rgb_obs': stack_rgb_obs,
-            'qpos': stack_low_dim_obs,
+            'rgb_obs': rgb_obs,
+            'qpos': low_dim_obs,
             'action': np.zeros(7).astype(np.float32),
             'reward': 0.0,
             'discount': 0.99,
@@ -250,8 +250,8 @@ class Workspace:
                 stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
                 
                 inst_samples = {
-                    'rgb_obs': stack_rgb_obs,
-                    'qpos': stack_low_dim_obs,
+                    'rgb_obs': rgb_obs,
+                    'qpos': low_dim_obs,
                     'action': np.zeros(7).astype(np.float32),
                     'reward': 0.0,
                     'discount': 0.99,
@@ -293,8 +293,8 @@ class Workspace:
             rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
             stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
             inst_samples = {
-                'rgb_obs': stack_rgb_obs,
-                'qpos': stack_low_dim_obs,
+                'rgb_obs': rgb_obs,
+                'qpos': low_dim_obs,
                 'action': action,
                 'reward': reward,
                 'discount': 0.99,
@@ -371,8 +371,8 @@ class Workspace:
                     stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb, observations["agent"]["qpos"][i_traj])
                     
                     inst_samples = {
-                        'rgb_obs': stack_rgb_obs,
-                        'qpos': stack_low_dim_obs,
+                        'rgb_obs': rgb,
+                        'qpos': observations["agent"]["qpos"][i_traj],
                         'action': action,
                         'reward': reward,
                         'discount': 0.99,
