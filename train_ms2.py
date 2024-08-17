@@ -318,7 +318,7 @@ class Workspace:
                 
                 length = len(observations)
                 
-                for i_traj in range(len(actions)):
+                for i_traj in range(len(trajectory)):
                     
                     # image data is not scaled here and is kept as uint16 to save space
                     rgb_b = cv2.resize(observations["image"]['base_camera']['rgb'][i_traj], (84, 84)).astype(np.uint8)
@@ -332,17 +332,24 @@ class Workspace:
                     
                     if i_traj == length - 1:
                         terminated = True
-                        truncated = False
+                        truncated = True
                         reward = 1.0
+                        action = actions[i_traj-1]
+                    elif i_traj == 0:
+                        terminated = False
+                        truncated = False
+                        reward = 0.0
+                        action = np.zeros(7).astype(np.float32)
                     else:
                         terminated = False
                         truncated = False
                         reward = 0.0
+                        action = actions[i_traj-1]
                     
                     inst_samples = {
                         'rgb_obs': rgb,
                         'qpos': observations["agent"]["qpos"][i_traj],
-                        'action': actions[i_traj],
+                        'action': action,
                         'reward': reward,
                         'discount': 0.99,
                         'demo': 1.0,
