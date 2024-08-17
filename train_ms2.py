@@ -166,7 +166,7 @@ class Workspace:
             log("episode", self.global_episode)
             log("step", self.global_step)
             
-    def uodate_frame_stack(self, rgb_obs, low_dim_obs):
+    def update_frame_stack(self, rgb_obs, low_dim_obs):
         self.stack_rgb_obs = np.roll(self.stack_rgb_obs, shift=-3, axis=1)
         self.stack_rgb_obs[:, -3:] = rgb_obs
         self.stack_qpos = np.roll(self.stack_qpos, shift=-9, axis=0)
