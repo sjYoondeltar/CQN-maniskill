@@ -4,7 +4,7 @@ defaults:
 
 # task settings
 frame_stack: 4
-action_repeat: 1
+action_repeat: 4
 discount: 0.99
 # train settings
 num_seed_frames: 0
@@ -35,7 +35,7 @@ feature_dim: 64
 do_always_bootstrap: false # setting to True can sometimes work better
 num_update_steps: 1
 # environment
-arm_max_velocity: 2.0
+arm_max_velocity: 1.0
 arm_max_acceleration: 8.0
 
 agent:
@@ -55,8 +55,8 @@ agent:
   levels: 3
   bins: 5
   atoms: 51
-  v_min: -2.0  # maybe -1.0/1.0?
-  v_max: 2.0
+  v_min: -1.0  # maybe -1.0/1.0?
+  v_max: 1.0
   critic_lambda: 0.1
   stddev_schedule: 0.01
   bc_lambda: 1.0
