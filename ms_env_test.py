@@ -59,8 +59,8 @@ def main(cfg):
     )
 
     agent = make_ms2_agent(
-                rgb_obs_shape,
-                [9],
+                (2, 3*cfg.frame_stack, 84, 84),
+                [9*cfg.frame_stack],
                 [8],
                 False,
                 cfg.agent,
@@ -70,6 +70,20 @@ def main(cfg):
     terminated = False
     truncated = False
     global_step = 0
+    
+    stack_rgb_obs = np.zeros((2, 3*cfg.frame_stack, 84, 84), dtype=np.uint8)
+    stack_qpos = np.zeros((9*cfg.frame_stack,), dtype=np.float32)
+    
+    rgb_obs, low_dim_obs = convert_obs(obs, cfg)
+    
+    for i in range(cfg.frame_stack):
+    
+        stack_rgb_obs = np.roll(stack_rgb_obs, shift=-3, axis=1)
+        stack_rgb_obs[:, -3:] = rgb_obs
+        stack_qpos = np.roll(stack_qpos, shift=-9, axis=0)
+        stack_qpos[-9:] = low_dim_obs
+        
+    
     for i in range(200):
         # action = env.action_space.sample()
         
@@ -78,8 +92,10 @@ def main(cfg):
         # else:
         #     action = np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
         
-        rgb_obs, low_dim_obs = convert_obs(obs, cfg)
-        action = agent.act(torch.tensor(rgb_obs).float(), torch.tensor(low_dim_obs), global_step, True)
+        action = agent.act(torch.tensor(stack_rgb_obs).float(), torch.tensor(stack_qpos), global_step, False)
+        
+        cv2.imshow("rgb_obs", rgb_obs[0].transpose(1, 2, 0))
+        cv2.waitKey(10)
         
         obs, reward, terminated, truncated, info = env.step(action)
         
@@ -101,6 +117,14 @@ def main(cfg):
         # cv2.imshow("render", render)
         # cv2.waitKey(10)
         global_step += 1
+        
+        
+        rgb_obs, low_dim_obs = convert_obs(obs, cfg)
+        
+        stack_rgb_obs = np.roll(stack_rgb_obs, shift=-3, axis=1)
+        stack_rgb_obs[:, -3:] = rgb_obs
+        stack_qpos = np.roll(stack_qpos, shift=-9, axis=0)
+        stack_qpos[-9:] = low_dim_obs
         
     env.close()
 

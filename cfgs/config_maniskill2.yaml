@@ -23,7 +23,7 @@ use_relabeling: true
 seed: 1
 device: cuda
 save_video: true
-save_train_video: false
+save_train_video: true
 use_tb: true
 use_wandb: false
 # experiment
