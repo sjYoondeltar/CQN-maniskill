@@ -299,6 +299,8 @@ class Workspace:
             # take env step
             obs, reward, terminated, truncated, info = self.train_env.step(action)
             rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
+            is_success = info["success"]
+            reward = 1.0 if is_success else 0.0
             stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
             inst_samples = {
                 'rgb_obs': rgb_obs,
@@ -309,6 +311,7 @@ class Workspace:
                 'demo': 0.0,
                 'last': terminated or truncated,
             }
+            episode_reward += reward
             self.replay_storage.add(inst_samples)
             self.demo_replay_storage.add(inst_samples)
             self.train_video_recorder.record(inst_samples["rgb_obs"][0].transpose(1, 2, 0))
