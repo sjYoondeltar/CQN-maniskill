@@ -349,6 +349,7 @@ class Workspace:
                 trajectory = load_h5_data(trajectory)
                 observations = trajectory["obs"]
                 actions = trajectory["actions"]
+                successes = trajectory["success"]
                 
                 length = len(observations["agent"]["qpos"])
                 
@@ -370,7 +371,7 @@ class Workspace:
                     if i_traj == length - 1:
                         terminated = True
                         truncated = True
-                        reward = 1.0
+                        reward = float(successes[i_traj-1])
                         action = actions[i_traj-1]
                     elif i_traj == 0:
                         terminated = False
@@ -380,7 +381,7 @@ class Workspace:
                     else:
                         terminated = False
                         truncated = False
-                        reward = 0.0
+                        reward = float(successes[i_traj-1])
                         action = actions[i_traj-1]
                     
                     stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb, observations["agent"]["qpos"][i_traj])
