@@ -36,7 +36,7 @@ def main(cfg):
     data_specs = (
         specs.Array((2, 3, 84, 84), np.uint8, "rgb_obs"),
         specs.Array((9,), np.float32, "qpos"),
-        specs.Array((7,), np.float32, "action"),
+        specs.Array((8,), np.float32, "action"),
         specs.Array((1,), np.float32, "reward"),
         specs.Array((1,), np.float32, "discount"),
         specs.Array((1,), np.float32, "demo"),
@@ -61,7 +61,7 @@ def main(cfg):
     agent = make_ms2_agent(
                 rgb_obs_shape,
                 [9],
-                [7],
+                [8],
                 False,
                 cfg.agent,
             )
