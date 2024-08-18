@@ -148,12 +148,12 @@ class Workspace:
             truncated = False
             
             rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
-            stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
+            for _ in range(self.cfg.frame_stack):
+                stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
             
             self.video_recorder.init(self.train_env, enabled=(episode == 0))
-            while terminated or truncated:
+            while not (terminated or truncated):
                 with torch.no_grad(), utils.eval_mode(self.agent):
-                    rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
                     action = self.agent.act(
                         stack_rgb_obs,
                         stack_low_dim_obs,
@@ -161,6 +161,8 @@ class Workspace:
                         eval_mode=True,
                     )
                 obs, reward, terminated, truncated, info  = self.train_env.step(action)
+                rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
+                stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
                 self.video_recorder.record(self.train_env)
                 total_reward += reward
                 step += 1
@@ -202,7 +204,8 @@ class Workspace:
         terminated = False
         truncated = False
         rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
-        stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
+        for _ in range(self.cfg.frame_stack):
+            stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
         
         inst_samples = {
             'rgb_obs': rgb_obs,
@@ -216,7 +219,7 @@ class Workspace:
         
         self.replay_storage.add(inst_samples)
         self.demo_replay_storage.add(inst_samples)
-        self.train_video_recorder.init(inst_samples["rgb_obs"][0].transpose(1, 2, 0))
+        self.train_video_recorder.init(inst_samples["rgb_obs"][0])
         metrics = None
         while train_until_step(self.global_step):
             if inst_samples["last"]:
@@ -255,7 +258,8 @@ class Workspace:
                 terminated = False
                 truncated = False
                 rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
-                stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
+                for _ in range(self.cfg.frame_stack):
+                    stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
                 
                 inst_samples = {
                     'rgb_obs': rgb_obs,
@@ -268,7 +272,7 @@ class Workspace:
                 }
                 self.replay_storage.add(inst_samples)
                 self.demo_replay_storage.add(inst_samples)
-                self.train_video_recorder.init(inst_samples["rgb_obs"][0].transpose(1, 2, 0))
+                self.train_video_recorder.init(inst_samples["rgb_obs"][0])
                 # try to save snapshot
                 if self.cfg.save_snapshot:
                     self.save_snapshot()
@@ -300,7 +304,7 @@ class Workspace:
             obs, reward, terminated, truncated, info = self.train_env.step(action)
             rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
             is_success = info["success"]
-            reward = 1.0 if is_success else 0.0
+            # reward = 1.0 if is_success else 0.0
             stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
             inst_samples = {
                 'rgb_obs': rgb_obs,
@@ -314,7 +318,7 @@ class Workspace:
             episode_reward += reward
             self.replay_storage.add(inst_samples)
             self.demo_replay_storage.add(inst_samples)
-            self.train_video_recorder.record(inst_samples["rgb_obs"][0].transpose(1, 2, 0))
+            self.train_video_recorder.record(inst_samples["rgb_obs"][0])
             episode_step += 1
             self._global_step += 1
 
@@ -346,12 +350,12 @@ class Workspace:
                 observations = trajectory["obs"]
                 actions = trajectory["actions"]
                 
-                length = len(observations)
+                length = len(observations["agent"]["qpos"])
                 
                 self.stack_rgb_obs = np.zeros((2, 3*self.cfg.frame_stack, 84, 84), dtype=np.uint8)
                 self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
                 
-                for i_traj in range(len(trajectory)):
+                for i_traj in range(length):
                     
                     # image data is not scaled here and is kept as uint16 to save space
                     rgb_b = cv2.resize(observations["image"]['base_camera']['rgb'][i_traj], (84, 84)).astype(np.uint8)
