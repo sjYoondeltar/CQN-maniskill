@@ -304,13 +304,13 @@ class Workspace:
             obs, reward, terminated, truncated, info = self.train_env.step(action)
             rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
             is_success = info["success"]
-            # reward = 1.0 if is_success else 0.0
+            sparse_reward = 1.0 if is_success else 0.0
             stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
             inst_samples = {
                 'rgb_obs': rgb_obs,
                 'qpos': low_dim_obs,
                 'action': action,
-                'reward': reward,
+                'reward': sparse_reward,
                 'discount': 0.99,
                 'demo': 0.0,
                 'last': terminated or truncated,
