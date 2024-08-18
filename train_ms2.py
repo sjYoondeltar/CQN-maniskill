@@ -136,19 +136,27 @@ class Workspace:
     def eval(self):
         """We use train env for evaluation, because it's convenient"""
         step, episode, total_reward = 0, 0, 0
+        
+        self.stack_rgb_obs = np.zeros((2, 3*self.cfg.frame_stack, 84, 84), dtype=np.uint8)
+        self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
+        
         eval_until_episode = utils.Until(self.cfg.num_eval_episodes)
 
         while eval_until_episode(episode):
             obs, _ = self.train_env.reset()
             terminated = False
             truncated = False
+            
+            rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
+            stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
+            
             self.video_recorder.init(self.train_env, enabled=(episode == 0))
             while terminated or truncated:
                 with torch.no_grad(), utils.eval_mode(self.agent):
                     rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
                     action = self.agent.act(
-                        rgb_obs,
-                        low_dim_obs,
+                        stack_rgb_obs,
+                        stack_low_dim_obs,
                         self.global_step,
                         eval_mode=True,
                     )
