@@ -4,7 +4,7 @@ defaults:
 
 # task settings
 frame_stack: 4
-action_repeat: 4
+action_repeat: 1
 discount: 0.99
 # train settings
 num_seed_frames: 0
@@ -29,7 +29,7 @@ use_wandb: false
 # experiment
 experiment: exp
 # agent
-lr: 5e-5
+lr: 1e-4
 weight_decay: 0.1
 feature_dim: 64
 do_always_bootstrap: false # setting to True can sometimes work better
