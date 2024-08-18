@@ -79,13 +79,13 @@ def main(cfg):
         #     action = np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
         
         rgb_obs, low_dim_obs = convert_obs(obs, cfg)
-        action = agent.act(rgb_obs, low_dim_obs, global_step, True)
+        action = agent.act(torch.tensor(rgb_obs).float(), torch.tensor(low_dim_obs), global_step, True)
         
         obs, reward, terminated, truncated, info = env.step(action)
         
         inst_samples = {
-            'rgb_obs': rgb_obs.numpy().astype(np.uint8),
-            'qpos': low_dim_obs.numpy(),
+            'rgb_obs': rgb_obs,
+            'qpos': low_dim_obs,
             'action': action,
             'reward': reward,
             'discount': 0.99,
