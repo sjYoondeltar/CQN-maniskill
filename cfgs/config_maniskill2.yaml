@@ -29,7 +29,7 @@ use_wandb: false
 # experiment
 experiment: exp
 # agent
-lr: 1e-4
+lr: 5e-5
 weight_decay: 0.1
 feature_dim: 64
 do_always_bootstrap: false # setting to True can sometimes work better
@@ -55,8 +55,8 @@ agent:
   levels: 3
   bins: 5
   atoms: 51
-  v_min: -1.0  # maybe -1.0/1.0?
-  v_max: 1.0
+  v_min: 0.0  # maybe -1.0/1.0?
+  v_max: 4.0
   critic_lambda: 0.1
   stddev_schedule: 0.01
   bc_lambda: 1.0
