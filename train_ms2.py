@@ -33,6 +33,12 @@ class Workspace:
         print(f"workspace: {self.work_dir}")
 
         self.cfg = cfg
+        
+        if self.cfg.control_mode == "pd_ee_delta_pose":
+            self.cfg.agent.action_shape = 7
+        else:
+            self.cfg.agent.action_shape = 8
+
         utils.set_seed_everywhere(cfg.seed)
         self.device = torch.device(cfg.device)
         self.setup()
@@ -40,7 +46,7 @@ class Workspace:
         self.agent = make_ms2_agent(
             (2, 3*self.cfg.frame_stack, 84, 84),
             [9*self.cfg.frame_stack],
-            [8],
+            [self.cfg.agent.action_shape],
             False,
             self.cfg.agent,
         )
@@ -63,7 +69,7 @@ class Workspace:
         data_specs = (
             specs.Array((2, 3, 84, 84), np.uint8, "rgb_obs"),
             specs.Array((9,), np.float32, "qpos"),
-            specs.Array((8,), np.float32, "action"),
+            specs.Array((self.cfg.agent.action_shape,), np.float32, "action"),
             specs.Array((1,), np.float32, "reward"),
             specs.Array((1,), np.float32, "discount"),
             specs.Array((1,), np.float32, "demo"),
@@ -210,7 +216,7 @@ class Workspace:
         inst_samples = {
             'rgb_obs': rgb_obs,
             'qpos': low_dim_obs,
-            'action': np.zeros(8).astype(np.float32),
+            'action': np.zeros(self.cfg.agent.action_shape).astype(np.float32),
             'reward': 0.0,
             'discount': 0.99,
             'demo': 0.0,
@@ -264,7 +270,7 @@ class Workspace:
                 inst_samples = {
                     'rgb_obs': rgb_obs,
                     'qpos': low_dim_obs,
-                    'action': np.zeros(8).astype(np.float32),
+                    'action': np.zeros(self.cfg.agent.action_shape).astype(np.float32),
                     'reward': 0.0,
                     'discount': 0.99,
                     'demo': 0.0,
@@ -377,7 +383,7 @@ class Workspace:
                         terminated = False
                         truncated = False
                         reward = 0.0
-                        action = np.zeros(8).astype(np.float32)
+                        action = np.zeros(self.cfg.agent.action_shape).astype(np.float32)
                     else:
                         terminated = False
                         truncated = False
