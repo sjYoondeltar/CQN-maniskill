@@ -44,7 +44,7 @@ class Workspace:
         self.setup()
 
         self.agent = make_ms2_agent(
-            (2, 3*self.cfg.frame_stack, 84, 84),
+            (2, 3*self.cfg.frame_stack, self.cfg.camera_shape[0], self.cfg.camera_shape[1]),
             [9*self.cfg.frame_stack],
             [self.cfg.agent.action_shape],
             False,
@@ -76,7 +76,7 @@ class Workspace:
             )
         # create replay buffer
         data_specs = (
-            specs.Array((2, 3, 84, 84), np.uint8, "rgb_obs"),
+            specs.Array((2, 3, self.cfg.camera_shape[0], self.cfg.camera_shape[1]), np.uint8, "rgb_obs"),
             specs.Array((9,), np.float32, "qpos"),
             specs.Array((self.cfg.agent.action_shape,), np.float32, "action"),
             specs.Array((1,), np.float32, "reward"),
@@ -84,7 +84,7 @@ class Workspace:
             specs.Array((1,), np.float32, "demo"),
         )
         
-        self.stack_rgb_obs = np.zeros((2, 3*self.cfg.frame_stack, 84, 84), dtype=np.uint8)
+        self.stack_rgb_obs = np.zeros((2, 3*self.cfg.frame_stack, self.cfg.camera_shape[0], self.cfg.camera_shape[1]), dtype=np.uint8)
         self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
 
         self.replay_storage = ReplayBufferStorage(
@@ -152,7 +152,7 @@ class Workspace:
         """We use train env for evaluation, because it's convenient"""
         step, episode, total_reward = 0, 0, 0
         
-        self.stack_rgb_obs = np.zeros((2, 3*self.cfg.frame_stack, 84, 84), dtype=np.uint8)
+        self.stack_rgb_obs = np.zeros((2, 3*self.cfg.frame_stack, self.cfg.camera_shape[0], self.cfg.camera_shape[1]), dtype=np.uint8)
         self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
         
         eval_until_episode = utils.Until(self.cfg.num_eval_episodes)
@@ -212,7 +212,7 @@ class Workspace:
 
         episode_step, episode_reward = 0, 0
         
-        self.stack_rgb_obs = np.zeros((2, 3*self.cfg.frame_stack, 84, 84), dtype=np.uint8)
+        self.stack_rgb_obs = np.zeros((2, 3*self.cfg.frame_stack, self.cfg.camera_shape[0], self.cfg.camera_shape[1]), dtype=np.uint8)
         self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
         
         obs, _ = self.train_env.reset()
@@ -266,7 +266,7 @@ class Workspace:
                     do_eval = False
 
                 # reset env
-                self.stack_rgb_obs = np.zeros((2, 3*self.cfg.frame_stack, 84, 84), dtype=np.uint8)
+                self.stack_rgb_obs = np.zeros((2, 3*self.cfg.frame_stack, self.cfg.camera_shape[0], self.cfg.camera_shape[1]), dtype=np.uint8)
                 self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
                 
                 obs, _ = self.train_env.reset()
@@ -368,14 +368,14 @@ class Workspace:
                 
                 length = len(observations["agent"]["qpos"])
                 
-                self.stack_rgb_obs = np.zeros((2, 3*self.cfg.frame_stack, 84, 84), dtype=np.uint8)
+                self.stack_rgb_obs = np.zeros((2, 3*self.cfg.frame_stack, self.cfg.camera_shape[0], self.cfg.camera_shape[1]), dtype=np.uint8)
                 self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
                 
                 for i_traj in range(length):
                     
                     # image data is not scaled here and is kept as uint16 to save space
-                    rgb_b = cv2.resize(observations["image"]['base_camera']['rgb'][i_traj], (84, 84)).astype(np.uint8)
-                    rgb_h = cv2.resize(observations["image"]['base_camera']['rgb'][i_traj], (84, 84)).astype(np.uint8)
+                    rgb_b = cv2.resize(observations["image"]['base_camera']['rgb'][i_traj], (self.cfg.camera_shape[0], self.cfg.camera_shape[1])).astype(np.uint8)
+                    rgb_h = cv2.resize(observations["image"]['base_camera']['rgb'][i_traj], (self.cfg.camera_shape[0], self.cfg.camera_shape[1])).astype(np.uint8)
                     
                     # transpose to (C, H, W)
                     rgb_b = rgb_b.transpose(2, 0, 1)[np.newaxis]
