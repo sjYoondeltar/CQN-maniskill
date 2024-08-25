@@ -1,9 +1,9 @@
 defaults:
   - _self_
-  - ms2_task@_global_: pickcube_v0
+  - ms2_task@_global_: picksingleycb_v0
 
 # task settings
-frame_stack: 4
+frame_stack: 8
 action_repeat: 1
 discount: 0.99
 # train settings

@@ -1,0 +1,7 @@
+defaults:
+  - default
+  - _self_
+
+task_name: PickSingleYCB-v0
+episode_length: 200
+dataset_file: demos/v0/rigid_body/PickSingleYCB-v0/065-e_cups.rgbd.pd_ee_delta_pose.h5
