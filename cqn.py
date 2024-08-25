@@ -61,7 +61,10 @@ class MultiViewCNNEncoder(nn.Module):
 
         assert len(obs_shape) == 4
         self.num_views = obs_shape[0]
-        self.repr_dim = self.num_views * 256 * 5 * 5  # for 84,84. hard-coded
+        # self.repr_dim = self.num_views * 256 * 5 * 5  # for 84,84. hard-coded
+        f_dim = 256
+        self.repr_dim = self.num_views * f_dim * 5 * 5 # for 84,84. hard-coded
+
 
         self.conv_nets = nn.ModuleList()
         for _ in range(self.num_views):
@@ -75,8 +78,8 @@ class MultiViewCNNEncoder(nn.Module):
                 nn.Conv2d(64, 128, 4, stride=2, padding=1),
                 ImgChLayerNorm(128),
                 nn.SiLU(),
-                nn.Conv2d(128, 256, 4, stride=2, padding=1),
-                ImgChLayerNorm(256),
+                nn.Conv2d(128, f_dim, 4, stride=2, padding=1),
+                ImgChLayerNorm(f_dim),
                 nn.SiLU(),
             )
             self.conv_nets.append(conv_net)

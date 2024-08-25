@@ -5,5 +5,5 @@ control_mode: "pd_ee_delta_pose"
 camera_keys: [base_camera,hand_camera]
 state_keys: [qpos]
 render_mode: "cameras"
-num_demos: 100
+num_demos: 500
 num_train_frames: 30250

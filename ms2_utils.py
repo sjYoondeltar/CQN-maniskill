@@ -16,8 +16,8 @@ def convert_obs(obs, cfg):
     # rgb -> (B, V, C, H, W) torch float tensor, V is both base_camera and hand_camera
     # resize to 84x84
     rgb_obs_list = []
-    for camera in ['base_camera', 'hand_camera']:
-        rgb_obs_list.append(cv2.resize(obs['image'][camera]['rgb'], (84, 84)).transpose(2, 0, 1).reshape(1, 3, 84, 84))
+    for camera in cfg.camera_keys:
+        rgb_obs_list.append(cv2.resize(obs['image'][camera]['rgb'], (cfg.camera_shape[0], cfg.camera_shape[1])).transpose(2, 0, 1).reshape(1, 3, cfg.camera_shape[0], cfg.camera_shape[1]))
     rgb_obs = np.concatenate(rgb_obs_list, axis=0)
     
     low_dim_obs = obs['agent'][cfg.state_keys[0]]
