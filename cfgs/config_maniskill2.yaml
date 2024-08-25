@@ -49,7 +49,7 @@ agent:
   critic_target_tau: 0.02
   update_every_steps: 1
   use_logger: ??? # to be specified later
-  num_expl_steps: 600
+  num_expl_steps: 0
   feature_dim: 128
   hidden_dim: 512
   levels: 3
