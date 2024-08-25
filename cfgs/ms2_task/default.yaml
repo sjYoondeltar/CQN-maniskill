@@ -1,7 +1,7 @@
 dataset_root: ''
 camera_shape: [84,84]
 obs_mode: "rgbd"
-control_mode: "pd_ee_delta_pose"
+control_mode: "pd_joint_delta_pos"
 camera_keys: [base_camera,hand_camera]
 state_keys: [qpos]
 render_mode: "cameras"
