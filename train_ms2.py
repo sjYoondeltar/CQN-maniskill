@@ -65,7 +65,7 @@ class Workspace:
                 obs_mode=self.cfg.obs_mode,
                 control_mode=self.cfg.control_mode,
                 render_mode=self.cfg.render_mode,
-                model_ids='065-a_cups'
+                model_ids='065-e_cups'
             )
         else:
             self.train_env = gym.make(
