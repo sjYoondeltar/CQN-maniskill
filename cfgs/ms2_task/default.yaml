@@ -1,5 +1,5 @@
 dataset_root: ''
-camera_shape: [42,42]
+camera_shape: [84,84]
 obs_mode: "rgbd"
 control_mode: "pd_ee_delta_pose"
 camera_keys: [base_camera,hand_camera]
