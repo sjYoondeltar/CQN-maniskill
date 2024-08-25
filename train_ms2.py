@@ -59,12 +59,21 @@ class Workspace:
 
     def setup(self):
         # create envs
-        self.train_env = gym.make(
-            self.cfg.task_name,
-            obs_mode=self.cfg.obs_mode,
-            control_mode=self.cfg.control_mode,
-            render_mode=self.cfg.render_mode
-        )
+        if self.cfg.task_name == "PickSingleYCB-v0":
+            self.train_env = gym.make(
+                self.cfg.task_name,
+                obs_mode=self.cfg.obs_mode,
+                control_mode=self.cfg.control_mode,
+                render_mode=self.cfg.render_mode,
+                model_ids='065-a_cups'
+            )
+        else:
+            self.train_env = gym.make(
+                self.cfg.task_name,
+                obs_mode=self.cfg.obs_mode,
+                control_mode=self.cfg.control_mode,
+                render_mode=self.cfg.render_mode
+            )
         # create replay buffer
         data_specs = (
             specs.Array((2, 3, 84, 84), np.uint8, "rgb_obs"),
