@@ -224,7 +224,7 @@ class Workspace:
         
         inst_samples = {
             'rgb_obs': rgb_obs,
-            'qpos': low_dim_obs,
+            'qpos': low_dim_obs.astype(np.float32),
             'action': np.zeros(self.cfg.agent.action_shape).astype(np.float32),
             'reward': 0.0,
             'discount': 0.99,
@@ -279,7 +279,7 @@ class Workspace:
                 
                 inst_samples = {
                     'rgb_obs': rgb_obs,
-                    'qpos': low_dim_obs,
+                    'qpos': low_dim_obs.astype(np.float32),
                     'action': np.zeros(self.cfg.agent.action_shape).astype(np.float32),
                     'reward': 0.0,
                     'discount': 0.99,
@@ -324,7 +324,7 @@ class Workspace:
             stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
             inst_samples = {
                 'rgb_obs': rgb_obs,
-                'qpos': low_dim_obs,
+                'qpos': low_dim_obs.astype(np.float32),
                 'action': action,
                 'reward': sparse_reward,
                 'discount': 0.99,
