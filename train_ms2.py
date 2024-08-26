@@ -154,36 +154,34 @@ class Workspace:
         
         self.stack_rgb_obs = np.zeros((len(self.cfg.camera_keys), 3*self.cfg.frame_stack, self.cfg.camera_shape[0], self.cfg.camera_shape[1]), dtype=np.uint8)
         self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
+
+        obs, _ = self.train_env.reset()
+        terminated = False
+        truncated = False
         
-        eval_until_episode = utils.Until(self.cfg.num_eval_episodes)
-
-        while eval_until_episode(episode):
-            obs, _ = self.train_env.reset()
-            terminated = False
-            truncated = False
-            
+        rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
+        # stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
+        for _ in range(self.cfg.frame_stack):
+            stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
+        
+        self.video_recorder.init(self.train_env, enabled=(episode == 0))
+        while not (terminated or truncated):
+            with torch.no_grad(), utils.eval_mode(self.agent):
+                action = self.agent.act(
+                    stack_rgb_obs,
+                    stack_low_dim_obs,
+                    self.global_step,
+                    eval_mode=True,
+                )
+            obs, reward, terminated, truncated, info  = self.train_env.step(action)
             rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
-            for _ in range(self.cfg.frame_stack):
-                stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
-            
-            self.video_recorder.init(self.train_env, enabled=(episode == 0))
-            while not (terminated or truncated):
-                with torch.no_grad(), utils.eval_mode(self.agent):
-                    action = self.agent.act(
-                        stack_rgb_obs,
-                        stack_low_dim_obs,
-                        self.global_step,
-                        eval_mode=True,
-                    )
-                obs, reward, terminated, truncated, info  = self.train_env.step(action)
-                rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
-                stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
-                self.video_recorder.record(self.train_env)
-                total_reward += reward
-                step += 1
+            stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
+            self.video_recorder.record(self.train_env)
+            total_reward += reward
+            step += 1
 
-            episode += 1
-            self.video_recorder.save(f"{self.global_frame}.mp4")
+        episode += 1
+        self.video_recorder.save(f"{self.global_frame}.mp4")
 
         with self.logger.log_and_dump_ctx(self.global_frame, ty="eval") as log:
             log("episode_reward", total_reward / episode)
@@ -219,6 +217,8 @@ class Workspace:
         terminated = False
         truncated = False
         rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
+        
+        # stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
         for _ in range(self.cfg.frame_stack):
             stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
         
@@ -273,6 +273,7 @@ class Workspace:
                 terminated = False
                 truncated = False
                 rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
+                # stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
                 for _ in range(self.cfg.frame_stack):
                     stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
                 
