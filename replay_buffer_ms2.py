@@ -46,7 +46,8 @@ class ReplayBufferStorage:
         for spec in self._data_specs:
             # Remove frame stacking
             if spec.name == "qpos":
-                low_dim = 9  # hard-coded
+                # low_dim = 9  # hard-coded
+                low_dim = 12  # hard-coded
                 value = instant_samples['qpos']
             elif spec.name == "rgb_obs":
                 rgb_dim = 3  # hard-coded

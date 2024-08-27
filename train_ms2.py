@@ -45,7 +45,7 @@ class Workspace:
 
         self.agent = make_ms2_agent(
             (len(self.cfg.camera_keys), 3*self.cfg.frame_stack, self.cfg.camera_shape[0], self.cfg.camera_shape[1]),
-            [9*self.cfg.frame_stack],
+            [12*self.cfg.frame_stack],
             [self.cfg.agent.action_shape],
             False,
             self.cfg.agent,
@@ -77,7 +77,7 @@ class Workspace:
         # create replay buffer
         data_specs = (
             specs.Array((len(self.cfg.camera_keys), 3, self.cfg.camera_shape[0], self.cfg.camera_shape[1]), np.uint8, "rgb_obs"),
-            specs.Array((9,), np.float32, "qpos"),
+            specs.Array((12,), np.float32, "qpos"),
             specs.Array((self.cfg.agent.action_shape,), np.float32, "action"),
             specs.Array((1,), np.float32, "reward"),
             specs.Array((1,), np.float32, "discount"),
@@ -85,7 +85,7 @@ class Workspace:
         )
         
         self.stack_rgb_obs = np.zeros((len(self.cfg.camera_keys), 3*self.cfg.frame_stack, self.cfg.camera_shape[0], self.cfg.camera_shape[1]), dtype=np.uint8)
-        self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
+        self.stack_qpos = np.zeros((12*self.cfg.frame_stack,), dtype=np.float32)
 
         self.replay_storage = ReplayBufferStorage(
             data_specs, self.work_dir / "buffer", self.cfg.use_relabeling
@@ -153,37 +153,35 @@ class Workspace:
         step, episode, total_reward = 0, 0, 0
         
         self.stack_rgb_obs = np.zeros((len(self.cfg.camera_keys), 3*self.cfg.frame_stack, self.cfg.camera_shape[0], self.cfg.camera_shape[1]), dtype=np.uint8)
-        self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
+        self.stack_qpos = np.zeros((12*self.cfg.frame_stack,), dtype=np.float32)
+
+        obs, _ = self.train_env.reset()
+        terminated = False
+        truncated = False
         
-        eval_until_episode = utils.Until(self.cfg.num_eval_episodes)
-
-        while eval_until_episode(episode):
-            obs, _ = self.train_env.reset()
-            terminated = False
-            truncated = False
-            
+        rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
+        # stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
+        for _ in range(self.cfg.frame_stack):
+            stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
+        
+        self.video_recorder.init(self.train_env, enabled=(episode == 0))
+        while not (terminated or truncated):
+            with torch.no_grad(), utils.eval_mode(self.agent):
+                action = self.agent.act(
+                    stack_rgb_obs,
+                    stack_low_dim_obs,
+                    self.global_step,
+                    eval_mode=True,
+                )
+            obs, reward, terminated, truncated, info  = self.train_env.step(action)
             rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
-            for _ in range(self.cfg.frame_stack):
-                stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
-            
-            self.video_recorder.init(self.train_env, enabled=(episode == 0))
-            while not (terminated or truncated):
-                with torch.no_grad(), utils.eval_mode(self.agent):
-                    action = self.agent.act(
-                        stack_rgb_obs,
-                        stack_low_dim_obs,
-                        self.global_step,
-                        eval_mode=True,
-                    )
-                obs, reward, terminated, truncated, info  = self.train_env.step(action)
-                rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
-                stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
-                self.video_recorder.record(self.train_env)
-                total_reward += reward
-                step += 1
+            stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
+            self.video_recorder.record(self.train_env)
+            total_reward += reward
+            step += 1
 
-            episode += 1
-            self.video_recorder.save(f"{self.global_frame}.mp4")
+        episode += 1
+        self.video_recorder.save(f"{self.global_frame}.mp4")
 
         with self.logger.log_and_dump_ctx(self.global_frame, ty="eval") as log:
             log("episode_reward", total_reward / episode)
@@ -191,11 +189,11 @@ class Workspace:
             log("episode", self.global_episode)
             log("step", self.global_step)
             
-    def update_frame_stack(self, rgb_obs, low_dim_obs):
+    def update_frame_stack(self, rgb_obs, low_dim_obs, low_dim=12):
         self.stack_rgb_obs = np.roll(self.stack_rgb_obs, shift=-3, axis=1)
         self.stack_rgb_obs[:, -3:] = rgb_obs
-        self.stack_qpos = np.roll(self.stack_qpos, shift=-9, axis=0)
-        self.stack_qpos[-9:] = low_dim_obs
+        self.stack_qpos = np.roll(self.stack_qpos, shift=-low_dim, axis=0)
+        self.stack_qpos[-low_dim:] = low_dim_obs
         return self.stack_rgb_obs, self.stack_qpos
 
     def train(self):
@@ -213,18 +211,20 @@ class Workspace:
         episode_step, episode_reward = 0, 0
         
         self.stack_rgb_obs = np.zeros((len(self.cfg.camera_keys), 3*self.cfg.frame_stack, self.cfg.camera_shape[0], self.cfg.camera_shape[1]), dtype=np.uint8)
-        self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
+        self.stack_qpos = np.zeros((12*self.cfg.frame_stack,), dtype=np.float32)
         
         obs, _ = self.train_env.reset()
         terminated = False
         truncated = False
         rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
+        
+        # stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
         for _ in range(self.cfg.frame_stack):
             stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
         
         inst_samples = {
             'rgb_obs': rgb_obs,
-            'qpos': low_dim_obs,
+            'qpos': low_dim_obs.astype(np.float32),
             'action': np.zeros(self.cfg.agent.action_shape).astype(np.float32),
             'reward': 0.0,
             'discount': 0.99,
@@ -267,18 +267,19 @@ class Workspace:
 
                 # reset env
                 self.stack_rgb_obs = np.zeros((len(self.cfg.camera_keys), 3*self.cfg.frame_stack, self.cfg.camera_shape[0], self.cfg.camera_shape[1]), dtype=np.uint8)
-                self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
+                self.stack_qpos = np.zeros((12*self.cfg.frame_stack,), dtype=np.float32)
                 
                 obs, _ = self.train_env.reset()
                 terminated = False
                 truncated = False
                 rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
+                # stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
                 for _ in range(self.cfg.frame_stack):
                     stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
                 
                 inst_samples = {
                     'rgb_obs': rgb_obs,
-                    'qpos': low_dim_obs,
+                    'qpos': low_dim_obs.astype(np.float32),
                     'action': np.zeros(self.cfg.agent.action_shape).astype(np.float32),
                     'reward': 0.0,
                     'discount': 0.99,
@@ -323,7 +324,7 @@ class Workspace:
             stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb_obs, low_dim_obs)
             inst_samples = {
                 'rgb_obs': rgb_obs,
-                'qpos': low_dim_obs,
+                'qpos': low_dim_obs.astype(np.float32),
                 'action': action,
                 'reward': sparse_reward,
                 'discount': 0.99,
@@ -369,7 +370,7 @@ class Workspace:
                 length = len(observations["agent"]["qpos"])
                 
                 self.stack_rgb_obs = np.zeros((len(self.cfg.camera_keys), 3*self.cfg.frame_stack, self.cfg.camera_shape[0], self.cfg.camera_shape[1]), dtype=np.uint8)
-                self.stack_qpos = np.zeros((9*self.cfg.frame_stack,), dtype=np.float32)
+                self.stack_qpos = np.zeros((12*self.cfg.frame_stack,), dtype=np.float32)
                 
                 for i_traj in range(length):
                     
@@ -398,12 +399,14 @@ class Workspace:
                         truncated = False
                         reward = float(successes[i_traj-1])
                         action = actions[i_traj-1]
+                        
+                    low_dim_obs = np.concatenate([observations["agent"]["qpos"][i_traj], observations["extra"]["goal_pos"][i_traj]], axis=0).astype(np.float32)
                     
-                    stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb, observations["agent"]["qpos"][i_traj])
+                    stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb, low_dim_obs)
                     
                     inst_samples = {
                         'rgb_obs': rgb,
-                        'qpos': observations["agent"]["qpos"][i_traj],
+                        'qpos': low_dim_obs,
                         'action': action,
                         'reward': reward,
                         'discount': 0.99,

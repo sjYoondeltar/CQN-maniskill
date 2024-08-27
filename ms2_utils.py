@@ -20,7 +20,8 @@ def convert_obs(obs, cfg):
         rgb_obs_list.append(cv2.resize(obs['image'][camera]['rgb'], (cfg.camera_shape[0], cfg.camera_shape[1])).transpose(2, 0, 1).reshape(1, 3, cfg.camera_shape[0], cfg.camera_shape[1]))
     rgb_obs = np.concatenate(rgb_obs_list, axis=0)
     
-    low_dim_obs = obs['agent'][cfg.state_keys[0]]
+    # low_dim_obs = obs['agent'][cfg.state_keys[0]]
+    low_dim_obs = np.concatenate([obs["agent"]["qpos"], obs["extra"]["goal_pos"]], axis=0)
     return rgb_obs, low_dim_obs
 
 

@@ -3,7 +3,7 @@ defaults:
   - ms2_task@_global_: pickcube_v0
 
 # task settings
-frame_stack: 8
+frame_stack: 4
 action_repeat: 1
 discount: 0.99
 # train settings
@@ -12,7 +12,7 @@ num_seed_frames: 0
 eval_every_frames: 2500
 num_eval_episodes: 1
 # snapshot
-save_snapshot: false
+save_snapshot: true
 # replay buffer
 replay_buffer_size: 1000000
 replay_buffer_num_workers: 4
@@ -46,17 +46,17 @@ agent:
   device: 0
   lr: 0.0001
   weight_decay: ${weight_decay}
-  critic_target_tau: 0.02
+  critic_target_tau: 0.1
   update_every_steps: 1
   use_logger: ??? # to be specified later
-  num_expl_steps: 600
+  num_expl_steps: 0
   feature_dim: 128
   hidden_dim: 512
   levels: 3
   bins: 5
   atoms: 51
   v_min: 0.0  # maybe -1.0/1.0?
-  v_max: 5.0
+  v_max: 2.0
   critic_lambda: 0.1
   stddev_schedule: 0.01
   bc_lambda: 1.0
