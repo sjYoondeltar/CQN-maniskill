@@ -171,7 +171,7 @@ class Workspace:
                     stack_rgb_obs,
                     stack_low_dim_obs,
                     self.global_step,
-                    eval_mode=False,
+                    eval_mode=True,
                 )
             obs, reward, terminated, truncated, info  = self.train_env.step(action)
             rgb_obs, low_dim_obs = convert_obs(obs, self.cfg)
