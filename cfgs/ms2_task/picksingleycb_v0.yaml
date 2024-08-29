@@ -4,4 +4,6 @@ defaults:
 
 task_name: PickSingleYCB-v0
 episode_length: 200
+model_ids: 065-e_cups
 dataset_file: demos/v0/rigid_body/PickSingleYCB-v0/065-e_cups.rgbd.pd_ee_delta_pose.h5
+num_demos: 100
