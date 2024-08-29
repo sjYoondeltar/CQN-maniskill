@@ -421,13 +421,13 @@ class Workspace:
     def load_ms2_demos(self):
         if self.cfg.num_demos > 0:
             base_path = hydra.utils.get_original_cwd()
-            if isinstance(self.cfg.dataset_file, list):
+            if isinstance(self.cfg.dataset_file, str):
+                dataset_file = os.path.join(base_path, self.cfg.dataset_file)
+                self.load_ms2_demos_from_h5(dataset_file)
+            else:
                 dataset_files = [os.path.join(base_path, f) for f in self.cfg.dataset_file]
                 for dataset_file in dataset_files:
                     self.load_ms2_demos_from_h5(dataset_files)
-            else:
-                dataset_file = os.path.join(base_path, self.cfg.dataset_file)
-                self.load_ms2_demos_from_h5(dataset_file)
         else:
             logging.warning("Not using demonstrations")
 
