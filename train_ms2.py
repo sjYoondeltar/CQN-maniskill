@@ -427,7 +427,7 @@ class Workspace:
             else:
                 dataset_files = [os.path.join(base_path, f) for f in self.cfg.dataset_file]
                 for dataset_file in dataset_files:
-                    self.load_ms2_demos_from_h5(dataset_files)
+                    self.load_ms2_demos_from_h5(dataset_file)
         else:
             logging.warning("Not using demonstrations")
 
