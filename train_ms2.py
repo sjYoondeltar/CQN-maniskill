@@ -337,88 +337,97 @@ class Workspace:
             self.train_video_recorder.record(inst_samples["rgb_obs"][0])
             episode_step += 1
             self._global_step += 1
+            
+    def load_ms2_demos_from_h5(self, dataset_file):
+            
+        import h5py
+        from mani_skill2.utils.io_utils import load_json
+        from tqdm import tqdm
+        
+        self.data = h5py.File(dataset_file, "r")
+        json_path = dataset_file.replace(".h5", ".json")
+        self.json_data = load_json(json_path)
+        self.episodes = self.json_data["episodes"]
+        self.env_info = self.json_data["env_info"]
+        self.env_id = self.env_info["env_id"]
+        self.env_kwargs = self.env_info["env_kwargs"]
+
+        self.obs_state = []
+        self.obs_rgbd = []
+        self.actions = []
+        self.total_frames = 0
+        load_count = self.cfg.num_demos
+        for eps_id in tqdm(range(load_count)):
+            eps = self.episodes[eps_id]
+            trajectory = self.data[f"traj_{eps['episode_id']}"]
+            trajectory = load_h5_data(trajectory)
+            observations = trajectory["obs"]
+            actions = trajectory["actions"]
+            successes = trajectory["success"]
+            
+            length = len(observations["agent"]["qpos"])
+            
+            self.stack_rgb_obs = np.zeros((len(self.cfg.camera_keys), 3*self.cfg.frame_stack, self.cfg.camera_shape[0], self.cfg.camera_shape[1]), dtype=np.uint8)
+            self.stack_qpos = np.zeros((self.cfg.low_dim_obs_shape*self.cfg.frame_stack,), dtype=np.float32)
+            
+            for i_traj in range(length):
+                
+                # image data is not scaled here and is kept as uint16 to save space
+                rgb_b = cv2.resize(observations["image"]['base_camera']['rgb'][i_traj], (self.cfg.camera_shape[0], self.cfg.camera_shape[1])).astype(np.uint8)
+                rgb_h = cv2.resize(observations["image"]['hand_camera']['rgb'][i_traj], (self.cfg.camera_shape[0], self.cfg.camera_shape[1])).astype(np.uint8)
+                
+                # transpose to (C, H, W)
+                rgb_b = rgb_b.transpose(2, 0, 1)[np.newaxis]
+                rgb_h = rgb_h.transpose(2, 0, 1)[np.newaxis]
+                                
+                rgb = np.concatenate([rgb_b, rgb_h], axis=0)
+                
+                if i_traj == length - 1:
+                    terminated = True
+                    truncated = True
+                    reward = float(successes[i_traj-1])
+                    action = actions[i_traj-1]
+                elif i_traj == 0:
+                    terminated = False
+                    truncated = False
+                    reward = 0.0
+                    action = np.zeros(self.cfg.agent.action_shape).astype(np.float32)
+                else:
+                    terminated = False
+                    truncated = False
+                    reward = float(successes[i_traj-1])
+                    action = actions[i_traj-1]
+                
+                if "goal_pos" in observations["extra"]:
+                    low_dim_obs = np.concatenate([observations["agent"]["qpos"][i_traj], observations["extra"]["goal_pos"][i_traj]], axis=0).astype(np.float32)
+                else:
+                    low_dim_obs = observations["agent"]["qpos"][i_traj].astype(np.float32)
+                
+                stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb, low_dim_obs, self.cfg.low_dim_obs_shape)
+                
+                inst_samples = {
+                    'rgb_obs': rgb,
+                    'qpos': low_dim_obs,
+                    'action': action,
+                    'reward': reward,
+                    'discount': 0.99,
+                    'demo': 1.0,
+                    'last': terminated or truncated,
+                }
+                
+                self.replay_storage.add(inst_samples)
+                self.demo_replay_storage.add(inst_samples)
 
     def load_ms2_demos(self):
         if self.cfg.num_demos > 0:
-            
-            import h5py
-            from mani_skill2.utils.io_utils import load_json
-            from tqdm import tqdm
             base_path = hydra.utils.get_original_cwd()
-            dataset_file = os.path.join(base_path, self.cfg.dataset_file)
-            self.data = h5py.File(dataset_file, "r")
-            json_path = dataset_file.replace(".h5", ".json")
-            self.json_data = load_json(json_path)
-            self.episodes = self.json_data["episodes"]
-            self.env_info = self.json_data["env_info"]
-            self.env_id = self.env_info["env_id"]
-            self.env_kwargs = self.env_info["env_kwargs"]
-
-            self.obs_state = []
-            self.obs_rgbd = []
-            self.actions = []
-            self.total_frames = 0
-            load_count = self.cfg.num_demos
-            for eps_id in tqdm(range(load_count)):
-                eps = self.episodes[eps_id]
-                trajectory = self.data[f"traj_{eps['episode_id']}"]
-                trajectory = load_h5_data(trajectory)
-                observations = trajectory["obs"]
-                actions = trajectory["actions"]
-                successes = trajectory["success"]
-                
-                length = len(observations["agent"]["qpos"])
-                
-                self.stack_rgb_obs = np.zeros((len(self.cfg.camera_keys), 3*self.cfg.frame_stack, self.cfg.camera_shape[0], self.cfg.camera_shape[1]), dtype=np.uint8)
-                self.stack_qpos = np.zeros((self.cfg.low_dim_obs_shape*self.cfg.frame_stack,), dtype=np.float32)
-                
-                for i_traj in range(length):
-                    
-                    # image data is not scaled here and is kept as uint16 to save space
-                    rgb_b = cv2.resize(observations["image"]['base_camera']['rgb'][i_traj], (self.cfg.camera_shape[0], self.cfg.camera_shape[1])).astype(np.uint8)
-                    rgb_h = cv2.resize(observations["image"]['hand_camera']['rgb'][i_traj], (self.cfg.camera_shape[0], self.cfg.camera_shape[1])).astype(np.uint8)
-                    
-                    # transpose to (C, H, W)
-                    rgb_b = rgb_b.transpose(2, 0, 1)[np.newaxis]
-                    rgb_h = rgb_h.transpose(2, 0, 1)[np.newaxis]
-                                    
-                    rgb = np.concatenate([rgb_b, rgb_h], axis=0)
-                    
-                    if i_traj == length - 1:
-                        terminated = True
-                        truncated = True
-                        reward = float(successes[i_traj-1])
-                        action = actions[i_traj-1]
-                    elif i_traj == 0:
-                        terminated = False
-                        truncated = False
-                        reward = 0.0
-                        action = np.zeros(self.cfg.agent.action_shape).astype(np.float32)
-                    else:
-                        terminated = False
-                        truncated = False
-                        reward = float(successes[i_traj-1])
-                        action = actions[i_traj-1]
-                    
-                    if "goal_pos" in observations["extra"]:
-                        low_dim_obs = np.concatenate([observations["agent"]["qpos"][i_traj], observations["extra"]["goal_pos"][i_traj]], axis=0).astype(np.float32)
-                    else:
-                        low_dim_obs = observations["agent"]["qpos"][i_traj].astype(np.float32)
-                    
-                    stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb, low_dim_obs, self.cfg.low_dim_obs_shape)
-                    
-                    inst_samples = {
-                        'rgb_obs': rgb,
-                        'qpos': low_dim_obs,
-                        'action': action,
-                        'reward': reward,
-                        'discount': 0.99,
-                        'demo': 1.0,
-                        'last': terminated or truncated,
-                    }
-                    
-                    self.replay_storage.add(inst_samples)
-                    self.demo_replay_storage.add(inst_samples)
+            if isinstance(self.cfg.dataset_file, list):
+                dataset_files = [os.path.join(base_path, f) for f in self.cfg.dataset_file]
+                for dataset_file in dataset_files:
+                    self.load_ms2_demos_from_h5(dataset_files)
+            else:
+                dataset_file = os.path.join(base_path, self.cfg.dataset_file)
+                self.load_ms2_demos_from_h5(dataset_file)
         else:
             logging.warning("Not using demonstrations")
 
