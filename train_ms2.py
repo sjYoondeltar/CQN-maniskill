@@ -399,9 +399,10 @@ class Workspace:
                     action = actions[i_traj-1]
                 
                 if "goal_pos" in observations["extra"]:
-                    low_dim_obs = np.concatenate([observations["agent"]["qpos"][i_traj], observations["extra"]["goal_pos"][i_traj]], axis=0).astype(np.float32)
+                    low_dim_obs = np.concatenate([observations["agent"]["qpos"][i_traj],
+                                                  observations["extra"]["goal_pos"][i_traj] - observations["extra"]["tcp_pos"][i_traj]], axis=0).astype(np.float32)
                 else:
-                    low_dim_obs = observations["agent"]["qpos"][i_traj].astype(np.float32)
+                    low_dim_obs = observations["agent"]["qpos"][i_traj].astype(np.float32) 
                 
                 stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb, low_dim_obs, self.cfg.low_dim_obs_shape)
                 
