@@ -400,7 +400,7 @@ class Workspace:
                 
                 if "goal_pos" in observations["extra"]:
                     low_dim_obs = np.concatenate([observations["agent"]["qpos"][i_traj],
-                                                  observations["extra"]["goal_pos"][i_traj] - observations["extra"]["tcp_pos"][i_traj]], axis=0).astype(np.float32)
+                                                  observations["extra"]["goal_pos"][i_traj] - observations["extra"]["tcp_pose"][i_traj][:3]], axis=0).astype(np.float32)
                 else:
                     low_dim_obs = observations["agent"]["qpos"][i_traj].astype(np.float32) 
                 
