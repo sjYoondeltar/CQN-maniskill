@@ -22,7 +22,7 @@ def convert_obs(obs, cfg):
     
     # low_dim_obs = obs['agent'][cfg.state_keys[0]]
     if "goal_pos" in obs["extra"]:
-        low_dim_obs = np.concatenate([obs["agent"]["qpos"], obs["extra"]["goal_pos"]], axis=0)
+        low_dim_obs = np.concatenate([obs["agent"]["qpos"], obs["extra"]["goal_pos"] - obs["extra"]["tcp_pose"][:3]], axis=0)
     else:
         low_dim_obs = obs["agent"]["qpos"]
     return rgb_obs, low_dim_obs
