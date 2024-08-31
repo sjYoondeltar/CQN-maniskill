@@ -46,7 +46,7 @@ agent:
   device: 0
   lr: 0.0001
   weight_decay: ${weight_decay}
-  critic_target_tau: 0.1
+  critic_target_tau: 0.01
   update_every_steps: 1
   use_logger: ??? # to be specified later
   num_expl_steps: 0
