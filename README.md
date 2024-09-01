@@ -12,6 +12,7 @@ To download the asset and demo datasets:
     python -m mani_skill2.utils.download_demo PickSingleYCB-v0
     python -m mani_skill2.utils.download_demo PegInsertionSide-v0
     python -m mani_skill2.utils.download_demo PlugCharger-v0
+    python -m mani_skill2.utils.download_demo StackCube-v0
 
 To convert the demo datasets to the rgbd image mode:
 
@@ -20,6 +21,9 @@ To convert the demo datasets to the rgbd image mode:
 
     python -m mani_skill2.trajectory.replay_trajectory --traj-path \
     demos/v0/rigid_body/PegInsertionSide-v0/trajectory.h5 --save-traj --obs-mode rgbd --target-control-mode pd_ee_delta_pose --num-procs 10
+
+    python -m mani_skill2.trajectory.replay_trajectory --traj-path \
+    demos/v0/rigid_body/StackCube-v0/trajectory.h5 --save-traj --obs-mode rgbd --target-control-mode pd_ee_delta_pose --num-procs 10
 
     # For the task PickSingleYCB-v0 with cups
     chmod +x run_traj_replay.sh
