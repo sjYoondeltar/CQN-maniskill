@@ -45,3 +45,7 @@ To train a model:
 ```python
     python train_ms2.py
 ```
+
+### Single YCB Object Pick and Place results
+
+![Single Cup Pick](media/single_cup_pick.gif)
