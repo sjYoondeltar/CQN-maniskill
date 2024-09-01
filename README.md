@@ -39,3 +39,9 @@ defaults:
 ```
 
 Other task yaml files can be found in `cfgs/ms2_task`.
+
+To train a model:
+
+```python
+    python train_ms2.py
+```
