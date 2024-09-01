@@ -1,0 +1,10 @@
+defaults:
+  - default
+  - _self_
+
+task_name: StackCube-v0
+episode_length: 200
+dataset_file: demos/v0/rigid_body/StackCube-v0/trajectory.rgbd.pd_ee_delta_pose.h5
+low_dim_obs_shape: 9
+state_keys: [qpos]
+num_demos: 500
