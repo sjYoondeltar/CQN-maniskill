@@ -1,5 +1,7 @@
 # CQN-maniskill
 
+This repository is the simple application of CQN agent for the ManiSkill2 Environment
+
 ## How to set Maniskill2 demonstration data
 
 To download the asset and demo datasets:
@@ -53,3 +55,9 @@ To train a model:
 ### Single YCB Object Pick and Place results
 
 ![Single Cup Pick](media/single_cup_pick.gif)
+
+### Reference
+
+[***Continuous Control with Coarse-to-fine Reinforcement Learning***](https://younggyo.me/cqn/)
+
+[***ManiSkill2***](https://github.com/haosulab/ManiSkill2-task-dev)
