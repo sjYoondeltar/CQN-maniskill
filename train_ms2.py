@@ -385,7 +385,7 @@ class Workspace:
                 if i_traj == length - 1:
                     terminated = True
                     truncated = True
-                    reward = float(successes[i_traj-1])
+                    reward = 0.0
                     action = actions[i_traj-1]
                 elif i_traj == 0:
                     terminated = False
@@ -395,7 +395,7 @@ class Workspace:
                 else:
                     terminated = False
                     truncated = False
-                    reward = float(successes[i_traj-1])
+                    reward = 0.0
                     action = actions[i_traj-1]
                 
                 if "goal_pos" in observations["extra"]:
