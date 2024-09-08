@@ -56,6 +56,10 @@ To train a model:
 
 ![Single Cup Pick](media/single_cup_pick.gif)
 
+### Cube Stacking results
+
+![Cube Stacking](media/stack_cube.gif)
+
 ### Reference
 
 [***Continuous Control with Coarse-to-fine Reinforcement Learning***](https://younggyo.me/cqn/)
