@@ -5,3 +5,4 @@ defaults:
 task_name: PickCube-v0
 episode_length: 200
 dataset_file: demos/v0/rigid_body/PickCube-v0/trajectory.rgbd.pd_ee_delta_pose.h5
+low_dim_obs_shape: 19
