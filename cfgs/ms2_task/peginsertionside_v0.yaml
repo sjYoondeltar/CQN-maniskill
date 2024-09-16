@@ -5,5 +5,4 @@ defaults:
 task_name: PegInsertionSide-v0
 episode_length: 200
 dataset_file: demos/v0/rigid_body/PegInsertionSide-v0/trajectory.rgbd.pd_joint_delta_pos.h5
-low_dim_obs_shape: 9
 state_keys: [qpos]
