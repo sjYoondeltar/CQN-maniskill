@@ -28,8 +28,7 @@ To convert the demo datasets to the rgbd image mode:
     demos/v0/rigid_body/StackCube-v0/trajectory.h5 --save-traj --obs-mode rgbd --target-control-mode pd_ee_delta_pose --num-procs 10
 
     # For the task PickSingleYCB-v0 with cups
-    chmod +x run_traj_replay.sh
-    ./run_traj_replay.sh
+    python run_traj_replay.py
 
 The control mode can be changed to `pd_joint_delta_pos` or `pd_ee_delta_pose` depending on the task. The number of processes can be adjusted according to the number of CPU cores available.
 
