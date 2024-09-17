@@ -13,3 +13,4 @@ dataset_file: [
   demos/v0/rigid_body/PickSingleYCB-v0/065-e_cups.rgbd.pd_ee_delta_pose.h5
 ]
 num_demos: 100
+low_dim_obs_shape: 19

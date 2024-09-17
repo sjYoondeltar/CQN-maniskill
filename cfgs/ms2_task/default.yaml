@@ -7,4 +7,4 @@ state_keys: [qpos, goal_pos]
 render_mode: "cameras"
 num_demos: 1000
 num_train_frames: 30250
-low_dim_obs_shape: 12
+low_dim_obs_shape: 16

@@ -385,7 +385,7 @@ class Workspace:
                 if i_traj == length - 1:
                     terminated = True
                     truncated = True
-                    reward = 0.0
+                    reward = 1.0
                     action = actions[i_traj-1]
                 elif i_traj == 0:
                     terminated = False
@@ -400,9 +400,13 @@ class Workspace:
                 
                 if "goal_pos" in observations["extra"]:
                     low_dim_obs = np.concatenate([observations["agent"]["qpos"][i_traj],
-                                                  observations["extra"]["goal_pos"][i_traj] - observations["extra"]["tcp_pose"][i_traj][:3]], axis=0).astype(np.float32)
+                                                  observations["extra"]["tcp_pose"][i_traj],
+                                                  observations["extra"]["goal_pos"][i_traj] - observations["extra"]["tcp_pose"][i_traj][:3]],
+                                                 axis=0).astype(np.float32)
                 else:
-                    low_dim_obs = observations["agent"]["qpos"][i_traj].astype(np.float32) 
+                    low_dim_obs = np.concatenate([observations["agent"]["qpos"][i_traj],
+                                                  observations["extra"]["tcp_pose"][i_traj]],
+                                                 axis=0).astype(np.float32)
                 
                 stack_rgb_obs, stack_low_dim_obs = self.update_frame_stack(rgb, low_dim_obs, self.cfg.low_dim_obs_shape)
                 
