@@ -22,7 +22,7 @@ import utils
 from logger import Logger
 from replay_buffer_ms2 import ReplayBufferStorage, make_replay_loader
 from video import TrainVideoRecorder, VideoRecorder
-from ms2_utils import make_ms2_agent, convert_obs, load_h5_data, get_obs_shape
+from ms2_utils import make_ms2_agent, convert_obs, load_h5_data
 
 torch.backends.cudnn.benchmark = True
 
@@ -42,12 +42,10 @@ class Workspace:
         utils.set_seed_everywhere(cfg.seed)
         self.device = torch.device(cfg.device)
         self.setup()
-
-        rgb_shape, low_dim_shape = get_obs_shape(cfg)
         
         self.agent = make_ms2_agent(
-            rgb_shape,
-            [low_dim_shape],
+            (len(self.cfg.observation.camera_keys), 3*self.cfg.frame_stack, self.cfg.observation.camera_shape[0], self.cfg.observation.camera_shape[1]),
+            [sum(item['dim'] for item in self.cfg.observation.low_dim_keys)*self.cfg.frame_stack],
             [self.cfg.agent.action_shape],
             False,
             self.cfg.agent,
