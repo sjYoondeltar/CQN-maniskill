@@ -7,3 +7,10 @@ episode_length: 200
 dataset_file: demos/v0/rigid_body/StackCube-v0/trajectory.rgbd.pd_ee_delta_pose.h5
 state_keys: [qpos]
 num_demos: 1000
+
+observation:
+  camera_keys: ["base_camera", "hand_camera"]
+  camera_shape: [84, 84]
+  low_dim_keys: 
+    - key: "qpos"
+      dim: 9

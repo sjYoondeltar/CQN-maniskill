@@ -2,9 +2,17 @@ dataset_root: ''
 camera_shape: [84,84]
 obs_mode: "rgbd"
 control_mode: "pd_ee_delta_pose"
-camera_keys: [base_camera,hand_camera]
-state_keys: [qpos, goal_pos]
 render_mode: "cameras"
 num_demos: 1000
 num_train_frames: 30250
-low_dim_obs_shape: 16
+
+observation:
+  camera_keys: ["base_camera", "hand_camera"]
+  camera_shape: [84, 84]
+  low_dim_keys: 
+    - key: "qpos"
+      dim: 9
+    - key: "tcp_pose"
+      dim: 7
+    - key: "goal_relative"
+      dim: 3

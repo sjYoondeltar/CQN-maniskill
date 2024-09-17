@@ -5,4 +5,10 @@ defaults:
 task_name: PegInsertionSide-v0
 episode_length: 200
 dataset_file: demos/v0/rigid_body/PegInsertionSide-v0/trajectory.rgbd.pd_joint_delta_pos.h5
-state_keys: [qpos]
+
+observation:
+  camera_keys: ["base_camera", "hand_camera"]
+  camera_shape: [84, 84]
+  low_dim_keys: 
+    - key: "qpos"
+      dim: 9
