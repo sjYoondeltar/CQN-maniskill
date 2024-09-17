@@ -1,6 +1,6 @@
 defaults:
   - _self_
-  - ms2_task@_global_: picksingleycb_v1
+  - ms2_task@_global_: picksingleycb_v0
 
 # task settings
 frame_stack: 8
