@@ -44,11 +44,6 @@ def convert_obs(obs, cfg):
     
     return rgb_obs, low_dim_obs
 
-def get_obs_shape(cfg):
-    rgb_shape = (len(cfg.observation.camera_keys), 3, *cfg.observation.camera_shape)
-    low_dim_shape = sum(item['dim'] for item in cfg.observation.low_dim_keys)
-    return rgb_shape, low_dim_shape
-
 # loads h5 data into memory for faster access
 def load_h5_data(data):
     out = dict()
