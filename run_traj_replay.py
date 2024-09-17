@@ -1,20 +1,18 @@
 import subprocess
 import sys
 
-# suffixes = [
-#     "003_cracker_box",
-#     "004_sugar_box",
-#     "005_tomato_soup_can",
-#     "006_mustard_bottle",
-#     "007_potted_meat_can",
-#     "008_banana",
-#     "021_bleach_cleanser"
-# ]
+suffixes = [
+    "003_cracker_box",
+    "004_sugar_box",
+    "005_tomato_soup_can",
+    "008_pudding_box",
+    "007_tuna_fish_can"
+]
 
-suffixes = []
-# 065 cup a부터 j까지 추가
-cups = [f"065-{chr(i)}_cup" for i in range(ord('a'), ord('j')+1)]
-suffixes.extend(cups)
+# suffixes = []
+# # 065 cup a부터 j까지 추가
+# cups = [f"065-{chr(i)}_cup" for i in range(ord('a'), ord('j')+1)]
+# suffixes.extend(cups)
 
 for suffix in suffixes:
     command = [
