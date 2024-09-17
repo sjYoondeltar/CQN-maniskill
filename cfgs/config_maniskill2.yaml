@@ -1,6 +1,6 @@
 defaults:
   - _self_
-  - ms2_task@_global_: stackcube_v0
+  - ms2_task@_global_: picksingleycb_v1
 
 # task settings
 frame_stack: 8

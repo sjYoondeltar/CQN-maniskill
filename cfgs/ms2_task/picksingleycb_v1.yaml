@@ -1,0 +1,22 @@
+defaults:
+  - default
+  - _self_
+
+task_name: PickSingleYCB-v0
+episode_length: 200
+model_ids: [
+    "003_cracker_box",
+    "004_sugar_box",
+    "005_tomato_soup_can",
+    "006_mustard_bottle",
+    "021_bleach_cleanser"
+  ]
+dataset_file: [
+  demos/v0/rigid_body/PickSingleYCB-v0/003_cracker_box.rgbd.pd_ee_delta_pose.h5,
+  demos/v0/rigid_body/PickSingleYCB-v0/004_sugar_box.rgbd.pd_ee_delta_pose.h5,
+  demos/v0/rigid_body/PickSingleYCB-v0/005_tomato_soup_can.rgbd.pd_ee_delta_pose.h5,
+  demos/v0/rigid_body/PickSingleYCB-v0/006_mustard_bottle.rgbd.pd_ee_delta_pose.h5,
+  demos/v0/rigid_body/PickSingleYCB-v0/021_bleach_cleanser.rgbd.pd_ee_delta_pose.h5
+]
+num_demos: 100
+low_dim_obs_shape: 19
